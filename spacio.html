@@ -889,7 +889,7 @@ const NEEDS=[
 
 // ── STATE ─────────────────────────────────────────
 const S={
-  page:'home',params:{},user:null,
+  page:'home',params:{},user:null,pendingEmail:null,
   filters:{types:[],freqs:[],villes:[],search:''},
   _dbNeeds: [],
   _needsLoaded: false,
@@ -1676,27 +1676,46 @@ function spSubmitInscription(){
   var cityEl=document.getElementById('sp-f-city');
   if(!nameEl||!emailEl||!pwdEl)return;
   var name=nameEl.value.trim(), email=emailEl.value.trim(), pwd=pwdEl.value;
+  var city=cityEl?cityEl.value.trim():'';
   if(!name||!email||!pwd){spToast('Merci de remplir tous les champs obligatoires.');return;}
   if(pwd.length<6){spToast('Le mot de passe doit contenir au moins 6 caractères.');return;}
 
-  // Désactiver le bouton pendant la requête
   var btn=document.querySelector('[onclick="spSubmitInscription()"]');
   if(btn){btn.disabled=true;btn.textContent='Création...';}
 
   db.auth.signUp({
     email: email,
     password: pwd,
-    options: { data: { name: name, type: S.inscType } }
+    options: {
+      data: { name: name, type: S.inscType, ville: city },
+      emailRedirectTo: window.location.origin + window.location.pathname
+    }
   }).then(function(r){
     if(r.error){
       spToast('Erreur : '+r.error.message);
       if(btn){btn.disabled=false;btn.textContent='Créer mon compte →';}
       return;
     }
+    if(!r.data.user){
+      spToast('Erreur lors de la création du compte. Réessayez.');
+      if(btn){btn.disabled=false;btn.textContent='Créer mon compte →';}
+      return;
+    }
+    // Confirmation email envoyé (session null = confirmation email requise)
+    if(!r.data.session){
+      S.pendingEmail=email;
+      S.inscStep=1; S.inscType='';
+      go('confirm-email');
+      return;
+    }
+    // Confirmation désactivée — connexion directe
     S.user={id:r.data.user.id, name:name, type:S.inscType, email:email};
     S.inscStep=1; S.inscType='';
     spToast('Bienvenue sur Spacio, '+name+' ! 🎉');
     go('dashboard');
+  }).catch(function(){
+    spToast('Une erreur est survenue. Réessayez.');
+    if(btn){btn.disabled=false;btn.textContent='Créer mon compte →';}
   });
 }
 
@@ -1857,6 +1876,27 @@ function pgInscription(type){
         '</div>'+
         stepsHTML+
         (step===1?step1HTML:step2HTML)+
+      '</div>'+
+    '</div>'+
+  spFooter();
+}
+
+// ── PAGE : CONFIRMATION EMAIL ─────────────────────
+function pgConfirmEmail(){
+  var email=S.pendingEmail||'votre adresse email';
+  return spNav()+
+    '<div style="min-height:100vh;padding:5rem 1.5rem 3rem;display:flex;align-items:center;justify-content:center;background:#F8F9FC;position:relative">'+
+      '<div style="position:absolute;inset:0;background-image:radial-gradient(circle,rgba(58,75,130,.06) 1px,transparent 1px);background-size:28px 28px;pointer-events:none"></div>'+
+      '<div style="background:white;border-radius:24px;padding:2.75rem 2.5rem;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(21,28,51,.09);border:1px solid var(--spacio-border);text-align:center;position:relative;z-index:1">'+
+        '<div style="width:72px;height:72px;background:rgba(58,75,130,.08);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem">'+
+          '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#3A4B82" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>'+
+        '</div>'+
+        '<h2 style="font-family:Space Grotesk,sans-serif;font-size:1.4rem;font-weight:800;color:#151C33;margin-bottom:.5rem">Vérifiez vos emails !</h2>'+
+        '<p style="font-size:.88rem;color:#6B7280;line-height:1.7;margin-bottom:.75rem">Un lien d\'activation a été envoyé à&nbsp;:</p>'+
+        '<div style="display:inline-block;background:rgba(58,75,130,.06);border:1px solid rgba(58,75,130,.12);border-radius:8px;padding:.45rem 1rem;font-family:Space Grotesk,sans-serif;font-size:.9rem;font-weight:700;color:#3A4B82;margin-bottom:1.5rem">'+email+'</div>'+
+        '<p style="font-size:.82rem;color:#9CA3AF;line-height:1.65;margin-bottom:2rem">Cliquez sur le lien dans l\'email pour activer votre compte et accéder à votre espace Spacio.<br><span style="margin-top:.35rem;display:inline-block">Pensez à vérifier vos spams.</span></p>'+
+        '<button onclick="go(\'home\')" style="cursor:pointer;width:100%;padding:.85rem;background:#151C33;color:white;border:none;border-radius:10px;font-family:Space Grotesk,sans-serif;font-size:.875rem;font-weight:700;transition:background .2s;margin-bottom:.625rem" onmouseover="this.style.background=\'#3A4B82\'" onmouseout="this.style.background=\'#151C33\'">Retour à l\'accueil</button>'+
+        '<button onclick="go(\'login\')" style="cursor:pointer;width:100%;padding:.75rem;background:transparent;color:#6B7280;border:none;font-size:.82rem;transition:color .2s" onmouseover="this.style.color=\'#151C33\'" onmouseout="this.style.color=\'#6B7280\'">Déjà confirmé ? Se connecter</button>'+
       '</div>'+
     '</div>'+
   spFooter();
@@ -3533,6 +3573,7 @@ function go(page,param){
     case 'espace':        html=pgEspace(S.params);break;
     case 'login':         html=pgLogin();break;
     case 'inscription':   html=pgInscription(S.params);break;
+    case 'confirm-email': html=pgConfirmEmail();break;
     case 'poster-besoin': html=pgPosterBesoin();break;
     case 'proposer-espace':html=pgProposerEspace();break;
     case 'dashboard':
