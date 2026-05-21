@@ -1210,7 +1210,7 @@ function spNewConversation(otherUserId, needId, spaceId){
           participant_ids:[S.user.id,otherUserId],
           need_id:needId||null,
           space_id:spaceId||null,
-          type:spaceId?'asso_contact':'hote_contact'
+          type:'asso_hote'
         }).select('id').single()
         .then(function(rc){
           if(rc.error){spToast('Erreur : '+rc.error.message);return;}
