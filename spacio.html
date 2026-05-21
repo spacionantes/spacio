@@ -1744,12 +1744,22 @@ function spSubmitInscription(){
     }
   }).then(function(r){
     if(r.error){
-      spToast('Erreur : '+r.error.message);
+      var msg=r.error.message||'';
+      var friendly='Erreur lors de la création du compte. Réessayez.';
+      if(msg.indexOf('rate limit')!==-1||msg.indexOf('too many')!==-1)
+        friendly='Trop de tentatives. Attendez quelques minutes avant de réessayer.';
+      else if(msg.indexOf('already registered')!==-1||msg.indexOf('already been registered')!==-1)
+        friendly='Cet email est déjà utilisé. Connectez-vous ou réinitialisez votre mot de passe.';
+      else if(msg.indexOf('invalid email')!==-1)
+        friendly='Adresse email invalide. Vérifiez le format.';
+      else if(msg.indexOf('password')!==-1&&msg.indexOf('short')!==-1)
+        friendly='Mot de passe trop court (6 caractères minimum).';
+      spToast(friendly);
       if(btn){btn.disabled=false;btn.textContent='Créer mon compte →';}
       return;
     }
     if(!r.data.user){
-      spToast('Erreur lors de la création du compte. Réessayez.');
+      spToast('Cet email est déjà utilisé. Vérifiez votre boîte mail ou connectez-vous.');
       if(btn){btn.disabled=false;btn.textContent='Créer mon compte →';}
       return;
     }
@@ -1795,8 +1805,15 @@ function spLogin(){
     }
     var u=r.data.user;
     db.from('profiles').select('*').eq('id',u.id).single().then(function(p){
-      S.user={id:u.id, name:p.data.name, type:p.data.type, email:u.email, profile:p.data};
-      spToast('Bon retour, '+p.data.name+' !');
+      if(p.data){
+        S.user={id:u.id, name:p.data.name, type:p.data.type, email:u.email, profile:p.data};
+        spToast('Bon retour, '+p.data.name+' !');
+      } else {
+        // Profil introuvable (edge case) — connexion minimale
+        S.user={id:u.id, name:u.email.split('@')[0], type:'association', email:u.email, profile:null};
+        spToast('Connecté !');
+      }
+      spRefreshNav();
       go('dashboard');
     });
   });
@@ -2563,15 +2580,23 @@ function pgDashboard(){
   var tab=S.dashTab||'overview';
   var initials=S.user.name.split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase().substring(0,2)||'?';
 
-  var CONVS=[
-    {w:isAsso?'Espace Lumière':'Asso Couleurs Vives',av:isAsso?'EL':'ACV',
-     msg:isAsso?'Bonjour, nous avons une grande salle disponible les mardis !':'Nous cherchons 30m² pour nos ateliers hebdomadaires.',
-     time:'Il y a 2h',unread:true},
-    {w:isAsso?'TechPark Lyon':'Mairie du 11e',av:isAsso?'TL':'M1',
-     msg:isAsso?'Notre open space est libre le week-end, ça pourrait vous correspondre ?':'Notre salle des fêtes est disponible certains samedis.',
-     time:'Hier',unread:false},
-    {w:'Spacio',av:'SP',msg:'Bienvenue ! Consultez nos guides pour bien démarrer sur la plateforme.',time:'Il y a 3j',unread:false}
-  ];
+  // Conversations réelles depuis Supabase (chargées dans spLoadDashData)
+  var rawConvs=S.dashData.convs||[];
+  var CONVS=rawConvs.slice(0,2).map(function(c){
+    var other=c._other||{name:'Correspondant',type:''};
+    var w=other.name||'Correspondant';
+    var av=w.split(' ').slice(0,2).map(function(x){return (x[0]||'').toUpperCase();}).join('').substring(0,2)||'?';
+    var lastMsg=c.last_message||'Nouvelle conversation';
+    var updatedAt=c.updated_at?new Date(c.updated_at):null;
+    var timeStr='';
+    if(updatedAt){
+      var diff=Math.floor((Date.now()-updatedAt.getTime())/60000);
+      if(diff<60)timeStr='Il y a '+diff+'min';
+      else if(diff<1440)timeStr='Il y a '+Math.floor(diff/60)+'h';
+      else timeStr='Il y a '+Math.floor(diff/1440)+'j';
+    }
+    return {w:w,av:av,msg:lastMsg,time:timeStr,unread:!!(c.unread_count&&c.unread_count>0)};
+  });
 
   var mainHTML='';
 
@@ -2594,7 +2619,9 @@ function pgDashboard(){
           '<h3 style="font-family:Space Grotesk,sans-serif;font-size:.95rem;font-weight:700;color:#151C33">Messages récents</h3>'+
           '<a onclick="spDashTab(\'messagerie\')" style="cursor:pointer;font-size:.8rem;color:#687FD2;font-weight:500">Voir tout →</a>'+
         '</div>'+
-        CONVS.slice(0,2).map(function(c){
+        (CONVS.length===0?
+          '<div style="text-align:center;padding:1.5rem 0;color:#9CA3AF;font-size:.84rem">Aucune conversation pour l\'instant.<br><span style="font-size:.78rem">Contactez un hôte ou publiez un besoin pour démarrer !</span></div>'
+        :CONVS.map(function(c){
           return '<div onclick="spDashTab(\'messagerie\')" style="cursor:pointer;display:flex;align-items:center;gap:.875rem;padding:.75rem 0;border-bottom:1px solid rgba(58,75,130,.07);transition:padding .15s" onmouseover="this.style.paddingLeft=\'.5rem\'" onmouseout="this.style.paddingLeft=\'0\'">'+
             '<div style="width:38px;height:38px;border-radius:10px;background:'+(c.unread?'#3A4B82':'rgba(58,75,130,.1)')+';display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:Space Grotesk,sans-serif;font-size:.7rem;font-weight:700;color:'+(c.unread?'white':'#3A4B82')+'">'+c.av+'</div>'+
             '<div style="flex:1;min-width:0">'+
@@ -2606,7 +2633,7 @@ function pgDashboard(){
             '</div>'+
             (c.unread?'<div style="width:8px;height:8px;border-radius:50%;background:#3A4B82;flex-shrink:0"></div>':'')+
           '</div>';
-        }).join('')+
+        }).join(''))+
       '</div>'+
       '<div style="background:linear-gradient(135deg,#151C33,#1A2755);border-radius:14px;padding:1.375rem;display:flex;justify-content:space-between;align-items:center;gap:1rem">'+
         '<div>'+
