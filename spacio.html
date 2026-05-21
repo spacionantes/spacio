@@ -403,16 +403,47 @@ tailwind.config = {
   .sp-nav-groups { display:flex; align-items:center; gap:.25rem }
   .sp-drop { position:relative }
   .sp-drop-btn { display:flex; align-items:center; gap:.3rem; cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; font-size:.875rem; font-weight:500; color:var(--spacio-blue-mid); opacity:.85; background:none; border:none; padding:.375rem .625rem; border-radius:7px; transition:all .15s; line-height:1 }
-  .sp-drop-btn:hover, .sp-drop:hover .sp-drop-btn { opacity:1; color:var(--spacio-blue-dark); background:rgba(58,75,130,.05) }
+  .sp-drop-btn:hover, .sp-drop:hover .sp-drop-btn { opacity:1; color:var(--spacio-blue-dark); background:rgba(58,75,130,.06) }
   .sp-drop-btn.active { opacity:1; font-weight:600; color:var(--spacio-blue-mid) }
-  .sp-drop-btn svg { transition:transform .2s; flex-shrink:0 }
+  .sp-drop-btn svg { transition:transform .22s; flex-shrink:0 }
   .sp-drop:hover .sp-drop-btn svg { transform:rotate(180deg) }
-  .sp-drop-menu { display:none; position:absolute; top:calc(100% + .625rem); left:50%; transform:translateX(-50%); background:white; border:1px solid #EAECEF; border-radius:14px; box-shadow:0 8px 28px rgba(21,28,51,.1); padding:.5rem; min-width:220px; z-index:1001 }
-  .sp-drop:hover .sp-drop-menu { display:block }
-  .sp-drop-menu a { display:flex; align-items:center; gap:.625rem; padding:.6rem .875rem; border-radius:9px; font-family:'Plus Jakarta Sans',sans-serif; font-size:.835rem; font-weight:500; color:#3A4B82; text-decoration:none; cursor:pointer; transition:background .12s; white-space:nowrap }
-  .sp-drop-menu a:hover { background:rgba(58,75,130,.06); color:#151C33 }
-  .sp-drop-sep { height:1px; background:#EAECEF; margin:.35rem .5rem }
-  .sp-drop-label { font-size:.68rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#A2B0D9; padding:.4rem .875rem .125rem }
+  /* Menu hidden state */
+  .sp-drop-menu {
+    visibility:hidden; opacity:0; pointer-events:none;
+    position:absolute; top:100%; left:50%;
+    transform:translateX(-50%) translateY(-6px);
+    background:white;
+    border:1px solid rgba(58,75,130,.11);
+    border-radius:16px;
+    box-shadow:0 4px 6px -2px rgba(21,28,51,.06), 0 16px 48px rgba(21,28,51,.13);
+    padding:.5rem; min-width:246px; z-index:1001;
+    transition:opacity .2s ease, visibility .2s ease, transform .2s ease;
+  }
+  /* Pont invisible pour éviter que le menu disparaisse entre le bouton et le menu */
+  .sp-drop-menu::before {
+    content:''; position:absolute; top:-.75rem; left:0; right:0; height:.75rem;
+  }
+  /* Petite flèche décorative */
+  .sp-drop-menu::after {
+    content:''; position:absolute; top:-5px; left:50%;
+    transform:translateX(-50%) rotate(45deg);
+    width:10px; height:10px; background:white;
+    border-top:1px solid rgba(58,75,130,.11);
+    border-left:1px solid rgba(58,75,130,.11);
+  }
+  /* Menu visible state */
+  .sp-drop:hover .sp-drop-menu {
+    visibility:visible; opacity:1; pointer-events:auto;
+    transform:translateX(-50%) translateY(0);
+  }
+  .sp-drop-menu a { display:flex; align-items:center; gap:.625rem; padding:.625rem .875rem; border-radius:10px; font-family:'Plus Jakarta Sans',sans-serif; font-size:.845rem; font-weight:500; color:#3A4B82; text-decoration:none; cursor:pointer; transition:background .12s, color .12s; white-space:nowrap }
+  .sp-drop-menu a:hover { background:rgba(58,75,130,.07); color:#151C33 }
+  .sp-drop-menu a .sp-drop-icon { width:30px; height:30px; background:rgba(58,75,130,.07); border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background .12s }
+  .sp-drop-menu a:hover .sp-drop-icon { background:rgba(58,75,130,.13) }
+  .sp-drop-menu a .sp-drop-txt { display:flex; flex-direction:column; gap:.1rem }
+  .sp-drop-menu a .sp-drop-txt small { font-size:.73rem; color:#94A3C8; font-weight:400; line-height:1.2 }
+  .sp-drop-sep { height:1px; background:rgba(58,75,130,.08); margin:.4rem .5rem }
+  .sp-drop-label { font-size:.67rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#B8C4DF; padding:.5rem .875rem .2rem }
   .nav-link-flat { font-family:'Plus Jakarta Sans',sans-serif; font-size:.875rem; font-weight:500; color:var(--spacio-blue-mid); opacity:.85; text-decoration:none; padding:.375rem .625rem; border-radius:7px; transition:all .15s; cursor:pointer; display:inline-block }
   .nav-link-flat:hover { opacity:1; color:var(--spacio-blue-dark); background:rgba(58,75,130,.05) }
   .nav-link-flat.active { opacity:1; font-weight:600 }
@@ -433,21 +464,39 @@ tailwind.config = {
         <button class="sp-drop-btn">Associations <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="sp-drop-menu">
           <div class="sp-drop-label">Trouver un espace</div>
-          <a onclick="go('espaces')" href="#">Espaces disponibles</a>
-          <a onclick="go('besoins')" href="#">Besoins en cours</a>
+          <a onclick="go('espaces');return false;" href="#">
+            <span class="sp-drop-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3A4B82" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18"/></svg></span>
+            <span class="sp-drop-txt">Espaces disponibles<small>Parcourir les lieux disponibles</small></span>
+          </a>
+          <a onclick="go('besoins');return false;" href="#">
+            <span class="sp-drop-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3A4B82" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+            <span class="sp-drop-txt">Besoins en cours<small>Voir ce que cherchent les assos</small></span>
+          </a>
           <div class="sp-drop-sep"></div>
-          <a onclick="go('poster-besoin')" href="#" style="font-weight:600;color:#3A4B82">+ Publier un besoin</a>
+          <a onclick="go('poster-besoin');return false;" href="#" style="font-weight:600;color:#3A4B82">
+            <span class="sp-drop-icon" style="background:rgba(58,75,130,.12)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3A4B82" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+            <span class="sp-drop-txt">Publier un besoin<small>Gratuit, en 5 minutes</small></span>
+          </a>
         </div>
       </div>
       <div class="sp-drop">
         <button class="sp-drop-btn">Hôtes <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="sp-drop-menu">
           <div class="sp-drop-label">Mettre son espace à disposition</div>
-          <a onclick="go('besoins')" href="#">Besoins des associations</a>
+          <a onclick="go('besoins');return false;" href="#">
+            <span class="sp-drop-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3A4B82" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>
+            <span class="sp-drop-txt">Besoins des associations<small>Trouver qui a besoin d'un lieu</small></span>
+          </a>
           <div class="sp-drop-sep"></div>
-          <a onclick="go('proposer-espace')" href="#" style="font-weight:600;color:#3A4B82">+ Proposer mon espace</a>
+          <a onclick="go('proposer-espace');return false;" href="#" style="font-weight:600;color:#3A4B82">
+            <span class="sp-drop-icon" style="background:rgba(58,75,130,.12)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3A4B82" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+            <span class="sp-drop-txt">Proposer mon espace<small>Valoriser un lieu inutilisé</small></span>
+          </a>
           <div class="sp-drop-sep"></div>
-          <a onclick="go('intensiscore')" href="#" style="display:flex;align-items:center;gap:.5rem;color:#687FD2"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#687FD2" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>⚡ Intensiscore</a>
+          <a onclick="go('intensiscore');return false;" href="#" style="color:#687FD2">
+            <span class="sp-drop-icon" style="background:rgba(104,127,210,.1)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#687FD2" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+            <span class="sp-drop-txt">Intensiscore<small>Diagnostiquer mon usage</small></span>
+          </a>
         </div>
       </div>
       <a onclick="go('ressources')" href="#" class="nav-link-flat">Ressources</a>
@@ -1179,20 +1228,21 @@ function spNav(){
           '<button class="sp-drop-btn'+((['besoins','espaces','espace','poster-besoin'].indexOf(S.page)>-1)?' active':'')+'">Associations <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>'+
           '<div class="sp-drop-menu">'+
             '<div class="sp-drop-label">Trouver un espace</div>'+
-            '<a onclick="go(\'espaces\')">Espaces disponibles</a>'+
-            '<a onclick="go(\'besoins\')">Besoins en cours</a>'+
+            '<a onclick="go(\'espaces\')"><span class="sp-drop-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3A4B82" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18"/></svg></span><span class="sp-drop-txt">Espaces disponibles<small>Parcourir les lieux disponibles</small></span></a>'+
+            '<a onclick="go(\'besoins\')"><span class="sp-drop-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3A4B82" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="sp-drop-txt">Besoins en cours<small>Voir ce que cherchent les assos</small></span></a>'+
             '<div class="sp-drop-sep"></div>'+
-            '<a onclick="go(\'poster-besoin\')" style="font-weight:600;color:#3A4B82">+ Publier un besoin</a>'+
+            '<a onclick="go(\'poster-besoin\')" style="font-weight:600;color:#3A4B82"><span class="sp-drop-icon" style="background:rgba(58,75,130,.12)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3A4B82" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span><span class="sp-drop-txt">Publier un besoin<small>Gratuit, en 5 minutes</small></span></a>'+
           '</div>'+
         '</div>'+
         '<div class="sp-drop">'+
           '<button class="sp-drop-btn'+((['proposer-espace','intensiscore'].indexOf(S.page)>-1)?' active':'')+'">Hôtes <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>'+
           '<div class="sp-drop-menu">'+
             '<div class="sp-drop-label">Mettre son espace à disposition</div>'+
-            '<a onclick="go(\'besoins\')">Besoins des associations</a>'+
+            '<a onclick="go(\'besoins\')"><span class="sp-drop-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3A4B82" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span><span class="sp-drop-txt">Besoins des associations<small>Trouver qui a besoin d\'un lieu</small></span></a>'+
             '<div class="sp-drop-sep"></div>'+
-            '<a onclick="go(\'proposer-espace\')" style="font-weight:600;color:#3A4B82">+ Proposer mon espace</a>'+
-            '<div class="sp-drop-sep"></div><a onclick="go(\'intensiscore\')" style="display:flex;align-items:center;gap:.5rem"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#687FD2" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>⚡ Intensiscore</a>'+
+            '<a onclick="go(\'proposer-espace\')" style="font-weight:600;color:#3A4B82"><span class="sp-drop-icon" style="background:rgba(58,75,130,.12)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3A4B82" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span><span class="sp-drop-txt">Proposer mon espace<small>Valoriser un lieu inutilisé</small></span></a>'+
+            '<div class="sp-drop-sep"></div>'+
+            '<a onclick="go(\'intensiscore\')" style="color:#687FD2"><span class="sp-drop-icon" style="background:rgba(104,127,210,.1)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#687FD2" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span><span class="sp-drop-txt">Intensiscore<small>Diagnostiquer mon usage</small></span></a>'+
           '</div>'+
         '</div>'+
         '<a onclick="go(\'ressources\')" class="nav-link-flat'+(S.page==='ressources'?' active':'')+'">Ressources</a>'+
