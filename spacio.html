@@ -1565,7 +1565,8 @@ function pgPlaceholder(title,msg,back){
 
 // ── PAGE : BESOIN DÉTAIL ──────────────────────────
 function pgBesoin(id){
-  var n=NEEDS.find(function(x){return x.id==id;});
+  // Cherche dans les vraies données Supabase d'abord, puis fallback mock
+  var n=(S._dbNeeds&&S._dbNeeds.find(function(x){return x.id==id;}))||NEEDS.find(function(x){return x.id==id;});
   if(!n)return pgPlaceholder('Besoin introuvable','Ce besoin n\'existe pas ou a été supprimé.','besoins');
   var c=TYPE_COLORS[n.type]||TYPE_COLORS.reunion,bg=c[0],col=c[1];
   var initials=n.org.split(' ').slice(0,2).map(function(w){return w[0];}).join('').toUpperCase();
@@ -1629,15 +1630,22 @@ function pgBesoin(id){
             '</div>'+
           '</div>'+
           '<div style="display:flex;gap:.625rem;flex-wrap:wrap">'+
+            // Bouton principal : Contacter (hôte connecté) ou Proposer mon espace (non-hôte)
             (S.user&&S.user.type==='hote'?
-              '<button onclick="spNewConversation(\''+(n.user_id||'')+'\',\''+(n.id||'')+'\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;background:#151C33;color:white;padding:.7rem 1.375rem;border-radius:10px;font-family:Space Grotesk,sans-serif;font-size:.875rem;font-weight:700;border:none;transition:background .2s" onmouseover="this.style.background=\'#253060\'" onmouseout="this.style.background=\'#151C33\'">'+
+              '<button onclick="'+(n.user_id?'spNewConversation(\''+n.user_id+'\',\''+n.id+'\',null)':'spToast(\'Impossible de contacter : profil de l\\\'association manquant.\')')+'" style="cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;background:#151C33;color:white;padding:.7rem 1.375rem;border-radius:10px;font-family:Space Grotesk,sans-serif;font-size:.875rem;font-weight:700;border:none;transition:background .2s" onmouseover="this.style.background=\'#253060\'" onmouseout="this.style.background=\'#151C33\'">'+
                 '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Contacter l\'association</button>'
+            :S.user&&S.user.type==='asso'?
+              '<button onclick="'+(n.user_id?'spNewConversation(\''+n.user_id+'\',\''+n.id+'\',null)':'spToast(\'Contact indisponible pour ce besoin.\')')+'" style="cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;background:#151C33;color:white;padding:.7rem 1.375rem;border-radius:10px;font-family:Space Grotesk,sans-serif;font-size:.875rem;font-weight:700;border:none;transition:background .2s" onmouseover="this.style.background=\'#253060\'" onmouseout="this.style.background=\'#151C33\'">'+
+                '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Se mutualiser</button>'
             :
-              '<button onclick="'+(S.user&&S.user.type==='asso'?'spToast(\'Vous êtes déjà inscrit comme association.\')':'go(\'inscription\',\'hote\')')+'" style="cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;background:#151C33;color:white;padding:.7rem 1.375rem;border-radius:10px;font-family:Space Grotesk,sans-serif;font-size:.875rem;font-weight:700;border:none;transition:background .2s" onmouseover="this.style.background=\'#253060\'" onmouseout="this.style.background=\'#151C33\'">'+
+              '<button onclick="go(\'inscription\',\'hote\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;background:#151C33;color:white;padding:.7rem 1.375rem;border-radius:10px;font-family:Space Grotesk,sans-serif;font-size:.875rem;font-weight:700;border:none;transition:background .2s" onmouseover="this.style.background=\'#253060\'" onmouseout="this.style.background=\'#151C33\'">'+
                 '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 21V8h8v13M2 9h20"/></svg>Proposer mon espace</button>'
             )+
-            '<button onclick="go(\'inscription\',\'asso\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;background:transparent;color:#687FD2;padding:.7rem 1.375rem;border-radius:10px;font-family:Space Grotesk,sans-serif;font-size:.875rem;font-weight:700;border:1.5px solid #3A4B82;transition:all .2s" onmouseover="this.style.background=\'rgba(58,75,130,.07)\'" onmouseout="this.style.background=\'transparent\'">'+
-              '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Se mutualiser</button>'+
+            // Bouton secondaire : visible uniquement si non connecté
+            (!S.user?
+              '<button onclick="go(\'inscription\',\'asso\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;background:transparent;color:#687FD2;padding:.7rem 1.375rem;border-radius:10px;font-family:Space Grotesk,sans-serif;font-size:.875rem;font-weight:700;border:1.5px solid #3A4B82;transition:all .2s" onmouseover="this.style.background=\'rgba(58,75,130,.07)\'" onmouseout="this.style.background=\'transparent\'">'+
+                '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Je suis une asso</button>'
+            :'')+
           '</div>'+
         '</div>'+
       '</div>'+
