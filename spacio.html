@@ -2317,6 +2317,14 @@ function spPeDoInsert(d,coords,btn){
   }).select().single().then(function(r){
     if(r.error){spToast('Erreur : '+r.error.message);if(btn){btn.disabled=false;btn.textContent='🏠 Publier mon espace';}return;}
     spToast('🏠 Votre espace a été publié !');
+    // Alerter les associations dont le besoin correspond à ce type d'espace
+    spCallEmailFn({
+      type:'match',
+      space_id:   r.data.id,
+      space_type: d.spaceType||'polyvalente',
+      space_ville:d.ville||'',
+      space_title:r.data.title||d.nom||''
+    });
     S.peStep=1; S.peData={};
     go('espaces');
   });
