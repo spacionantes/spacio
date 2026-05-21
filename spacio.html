@@ -1055,6 +1055,16 @@ function spLoadMessages(convId, callback){
     .catch(function(){ if(callback)callback(); });
 }
 
+// ── EMAIL TRANSACTIONNEL ──────────────────────────
+function spCallEmailFn(payload){
+  fetch(SUPA_URL+'/functions/v1/send-email',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  }).catch(function(){/* silently fail */});
+}
+// ─────────────────────────────────────────────────
+
 function spSendMessage(convId){
   var inp=document.getElementById('sp-msg-input');
   if(!inp)return;
@@ -1069,6 +1079,9 @@ function spSendMessage(convId){
     inp.disabled=false;inp.focus();
     if(r.error){spToast('Erreur envoi : '+r.error.message);return;}
     spLoadMessages(convId,function(){ spRenderMessages(convId); });
+    // Notifier le destinataire par email (best-effort)
+    var senderName=(S.user&&S.user.name)||'Un utilisateur';
+    spCallEmailFn({type:'message',conversation_id:convId,sender_id:S.user.id,sender_name:senderName,message_preview:content});
   });
 }
 
@@ -1703,12 +1716,16 @@ function spSubmitInscription(){
     if(!r.data.session){
       S.pendingEmail=email;
       S.inscStep=1; S.inscType='';
+      // Email de bienvenue transactionnel
+      spCallEmailFn({type:'welcome',to:email,name:name,user_type:S.inscType});
       go('confirm-email');
       return;
     }
     // Confirmation désactivée — connexion directe
     S.user={id:r.data.user.id, name:name, type:S.inscType, email:email};
     S.inscStep=1; S.inscType='';
+    // Email de bienvenue transactionnel
+    spCallEmailFn({type:'welcome',to:email,name:name,user_type:S.user.type});
     spToast('Bienvenue sur Spacio, '+name+' ! 🎉');
     go('dashboard');
   }).catch(function(){
