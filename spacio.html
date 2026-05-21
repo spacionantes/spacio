@@ -2066,7 +2066,7 @@ function spPbPublish(){
     space_type:     d.type||'reunion',
     superficie_min: d.areaMin?parseInt(d.areaMin):null,
     superficie_max: d.areaMax?parseInt(d.areaMax):null,
-    frequence:      d.freq||'ponctuelle',
+    frequence:      ({'Hebdomadaire':'hebdo','Mensuelle':'mensuelle','Ponctuelle':'ponctuelle','Autre':'autre'}[d.freq]||d.freq||'ponctuelle'),
     creneaux:       d.creneau?[d.creneau]:[],
     ville:          d.ville||'',
     quartier:       d.quartier||'',
@@ -2150,14 +2150,14 @@ function pgPosterBesoin(){
         '</select>'+
       '</div>';
   } else if(step===3){
-    var freqs=['Ponctuelle','Hebdomadaire','Mensuelle','Autre'];
+    var freqs=[['ponctuelle','Ponctuelle'],['hebdo','Hebdomadaire'],['mensuelle','Mensuelle'],['autre','Autre']];
     bodyHTML=
       '<div style="margin-bottom:1.25rem">'+
         '<label style="display:block;font-size:.84rem;font-weight:500;color:#151C33;margin-bottom:.5rem">Fréquence</label>'+
         '<div style="display:flex;flex-wrap:wrap;gap:.5rem">'+
           freqs.map(function(f){
-            var sel=S.pbData.freq===f;
-            return '<button onclick="S.pbData.freq=\''+f+'\';go(\'poster-besoin\')" style="cursor:pointer;padding:.45rem 1rem;border:1.5px solid '+(sel?'#3A4B82':'rgba(58,75,130,.18)')+';border-radius:20px;font-size:.82rem;font-weight:'+(sel?'600':'400')+';color:'+(sel?'#3A4B82':'#6B7280')+';background:'+(sel?'rgba(58,75,130,.07)':'white')+';transition:all .2s">'+f+'</button>';
+            var sel=S.pbData.freq===f[0];
+            return '<button onclick="S.pbData.freq=\''+f[0]+'\';go(\'poster-besoin\')" style="cursor:pointer;padding:.45rem 1rem;border:1.5px solid '+(sel?'#3A4B82':'rgba(58,75,130,.18)')+';border-radius:20px;font-size:.82rem;font-weight:'+(sel?'600':'400')+';color:'+(sel?'#3A4B82':'#6B7280')+';background:'+(sel?'rgba(58,75,130,.07)':'white')+';transition:all .2s">'+f[1]+'</button>';
           }).join('')+
         '</div>'+
       '</div>'+
