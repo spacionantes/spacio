@@ -15,6 +15,8 @@
 <meta name="twitter:title" content="Spacio — Des espaces pour les associations">
 <meta name="twitter:description" content="Spacio connecte les associations qui cherchent un espace avec les hôtes qui souhaitent mettre leur lieu à disposition.">
 <link rel="canonical" href="https://spacionantes.github.io/spacio/spacio.html">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -857,6 +859,7 @@ const S={
   _curSpace: null, _curSpaceId: null,
   _statsLoaded: false,
   spaceFilters: {types:[], villes:[], search:''},
+  spacesViewMode: 'list',
   dashData: { needs:[], spaces:[], convs:[], stats:{needsCount:0,spacesCount:0,convCount:0,viewsCount:0,activeCount:0}, loaded:false },
   activeConv: null,
   convMessages: [],
@@ -1402,6 +1405,7 @@ function spRerenderSpaceGrid(){
   var ns=S.filteredSpaces;
   var hasF=S.spaceFilters.types.length||S.spaceFilters.villes.length||S.spaceFilters.search;
   g.innerHTML=ns.length?ns.map(spaceCard).join(''):(hasF?spEmptyState('🔍','Aucun espace trouvé','Modifiez vos filtres pour élargir la recherche.',null):spEmptyState('🏠','Pas encore d\'espaces','Soyez le premier à proposer un espace aux associations.',['proposer-espace','Proposer un espace →']));
+  if(S.spacesViewMode==='map')setTimeout(spInitSpaceMap,50);
   var cnt=document.getElementById('sp-scount');
   if(cnt)cnt.innerHTML='<strong style="color:#151C33">'+ns.length+'</strong> espace'+(ns.length>1?'s ':' ')+'disponible'+(ns.length>1?'s':'');
 }
@@ -2271,12 +2275,29 @@ function spPeNext(){
 
 function spPeBack(){if(S.peStep>1)S.peStep--;go('proposer-espace');}
 
+function spGeocode(query,cb){
+  fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(query)+'&format=json&limit=1&accept-language=fr',{headers:{'User-Agent':'Spacio/1.0'}})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data&&data.length){cb({lat:parseFloat(data[0].lat),lon:parseFloat(data[0].lon)});}
+      else cb(null);
+    }).catch(function(){cb(null);});
+}
+
 function spPePublish(){
   if(!S.user){spToast('Connectez-vous pour publier un espace.');S.peStep=1;go('inscription');return;}
   var d=S.peData;
   var btn=document.querySelector('[onclick="spPePublish()"]');
   if(btn){btn.disabled=true;btn.textContent='Publication...';}
 
+  // Geocode the address before saving
+  var geoQuery=((d.adresse?d.adresse+', ':'')+d.ville+(d.quartier?', '+d.quartier:'')+', France').trim();
+  spGeocode(geoQuery,function(coords){
+    spPeDoInsert(d,coords,btn);
+  });
+}
+
+function spPeDoInsert(d,coords,btn){
   db.from('spaces').insert({
     user_id:       S.user.id,
     title:         d.nom||(d.typeLabel+' — '+(d.ville||'France')),
@@ -2290,12 +2311,14 @@ function spPePublish(){
     disponibilites:{jours:d.jours||[],heures:d.horaires||''},
     conditions:    d.conditions||'gratuit',
     tarif:         d.tarif||'',
-    photos:        d.photos||[]
+    photos:        d.photos||[],
+    lat:           coords?coords.lat:null,
+    lon:           coords?coords.lon:null
   }).select().single().then(function(r){
     if(r.error){spToast('Erreur : '+r.error.message);if(btn){btn.disabled=false;btn.textContent='🏠 Publier mon espace';}return;}
     spToast('🏠 Votre espace a été publié !');
     S.peStep=1; S.peData={};
-    go('besoins');
+    go('espaces');
   });
 }
 
@@ -2799,15 +2822,93 @@ function pgEspaces(){
         '<aside id="sp-besp-aside" class="sp-filter-sidebar" style="position:sticky;top:5rem;background:white;border-radius:16px;padding:1.375rem;border:1px solid rgba(58,75,130,.1)">'+filterHTML+'</aside>'+
       '</div>'+
       '<div>'+
-        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">'+
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem">'+
           '<p id="sp-scount" style="font-size:.84rem;color:#6B7280"><strong style="color:#151C33">'+activeCount+'</strong> espace'+(activeCount!==1?'s ':' ')+'disponible'+(activeCount!==1?'s':'')+'</p>'+
-          '<a onclick="go(\'proposer-espace\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1rem;background:#3A4B82;color:white;border-radius:9px;font-family:Space Grotesk,sans-serif;font-size:.79rem;font-weight:700;text-decoration:none;transition:background .2s" onmouseover="this.style.background=\'#253060\'" onmouseout="this.style.background=\'#3A4B82\'">+ Proposer le mien</a>'+
+          '<div style="display:flex;align-items:center;gap:.625rem">'+
+            '<div style="display:flex;border:1.5px solid rgba(58,75,130,.2);border-radius:9px;overflow:hidden">'+
+              '<button onclick="spSpacesToggleView(\'list\')" id="sp-view-list" style="cursor:pointer;padding:.4rem .875rem;font-size:.78rem;font-weight:600;font-family:Plus Jakarta Sans,sans-serif;border:none;background:'+(S.spacesViewMode==='map'?'white':'rgba(58,75,130,.1)')+';color:'+(S.spacesViewMode==='map'?'#6B7280':'#3A4B82')+';display:flex;align-items:center;gap:.35rem;transition:all .2s">'+
+                '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Liste'+
+              '</button>'+
+              '<button onclick="spSpacesToggleView(\'map\')" id="sp-view-map" style="cursor:pointer;padding:.4rem .875rem;font-size:.78rem;font-weight:600;font-family:Plus Jakarta Sans,sans-serif;border:none;background:'+(S.spacesViewMode==='map'?'rgba(58,75,130,.1)':'white')+';color:'+(S.spacesViewMode==='map'?'#3A4B82':'#6B7280')+';display:flex;align-items:center;gap:.35rem;transition:all .2s">'+
+                '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>Carte'+
+              '</button>'+
+            '</div>'+
+            '<a onclick="go(\'proposer-espace\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1rem;background:#3A4B82;color:white;border-radius:9px;font-family:Space Grotesk,sans-serif;font-size:.79rem;font-weight:700;text-decoration:none;transition:background .2s" onmouseover="this.style.background=\'#253060\'" onmouseout="this.style.background=\'#3A4B82\'">+ Proposer le mien</a>'+
+          '</div>'+
         '</div>'+
-        '<div id="sp-sgrid" class="needs-grid">'+gridContent+'</div>'+
+        '<div id="sp-sgrid" class="needs-grid" style="'+(S.spacesViewMode==='map'?'display:none':'')+'">'+gridContent+'</div>'+
+        '<div id="sp-map-wrap" style="border-radius:16px;overflow:hidden;border:1px solid rgba(58,75,130,.1);'+(S.spacesViewMode!=='map'?'display:none':'')+'">'+
+          '<div id="sp-map" style="height:520px;width:100%"></div>'+
+        '</div>'+
       '</div>'+
     '</div>'+
   '</div>'+
   spFooter();
+}
+
+function spSpacesToggleView(mode){
+  S.spacesViewMode=mode;
+  var grid=document.getElementById('sp-sgrid');
+  var mapWrap=document.getElementById('sp-map-wrap');
+  var btnList=document.getElementById('sp-view-list');
+  var btnMap=document.getElementById('sp-view-map');
+  if(!grid||!mapWrap)return;
+  if(mode==='map'){
+    grid.style.display='none';
+    mapWrap.style.display='block';
+    btnList.style.background='white';btnList.style.color='#6B7280';
+    btnMap.style.background='rgba(58,75,130,.1)';btnMap.style.color='#3A4B82';
+    setTimeout(spInitSpaceMap,50);
+  } else {
+    grid.style.display='';
+    mapWrap.style.display='none';
+    btnList.style.background='rgba(58,75,130,.1)';btnList.style.color='#3A4B82';
+    btnMap.style.background='white';btnMap.style.color='#6B7280';
+  }
+}
+
+var _spMap=null;
+function spInitSpaceMap(){
+  var container=document.getElementById('sp-map');
+  if(!container||typeof L==='undefined')return;
+  // Reset map if already initialized on this container
+  if(_spMap){_spMap.remove();_spMap=null;}
+  _spMap=L.map('sp-map',{scrollWheelZoom:false}).setView([46.5,2.3],5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
+    maxZoom:18
+  }).addTo(_spMap);
+  var spaceIcon=L.divIcon({
+    html:'<div style="width:32px;height:32px;background:#3A4B82;border-radius:50% 50% 50% 4px;transform:rotate(45deg);border:2px solid white;box-shadow:0 2px 6px rgba(21,28,51,.3)"></div>',
+    iconSize:[32,32],iconAnchor:[16,28],popupAnchor:[0,-30],className:''
+  });
+  var bounds=[];
+  S.filteredSpaces.forEach(function(sp){
+    if(!sp.lat||!sp.lon)return;
+    var photos=Array.isArray(sp.photos)?sp.photos:[];
+    var cover=photos.length?'<img src="'+photos[0]+'" style="width:100%;height:100px;object-fit:cover;border-radius:8px;margin-bottom:.5rem">':'';
+    var lbl=TYPE_LABELS[sp.space_type]||sp.space_type;
+    var popup=
+      '<div style="font-family:Plus Jakarta Sans,sans-serif;min-width:180px">'+
+        cover+
+        '<div style="font-size:.75rem;font-weight:700;color:#687FD2;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.2rem">'+lbl+'</div>'+
+        '<div style="font-size:.9rem;font-weight:700;color:#151C33;margin-bottom:.25rem">'+(sp.title||lbl)+'</div>'+
+        '<div style="font-size:.78rem;color:#6B7280;margin-bottom:.625rem">'+(sp.ville||'')+(sp.quartier?' · '+sp.quartier:'')+'</div>'+
+        '<a onclick="go(\'espace\',\''+sp.id+'\')" style="display:inline-block;background:#3A4B82;color:white;padding:.35rem .875rem;border-radius:7px;font-size:.78rem;font-weight:700;cursor:pointer;text-decoration:none">Voir →</a>'+
+      '</div>';
+    var marker=L.marker([sp.lat,sp.lon],{icon:spaceIcon}).addTo(_spMap);
+    marker.bindPopup(popup);
+    bounds.push([sp.lat,sp.lon]);
+  });
+  if(bounds.length>0){
+    try{_spMap.fitBounds(bounds,{padding:[40,40],maxZoom:13});}catch(e){}
+  }
+  if(bounds.length===0){
+    var noDataDiv=document.createElement('div');
+    noDataDiv.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:1rem 1.5rem;border-radius:12px;text-align:center;font-family:Plus Jakarta Sans,sans-serif;font-size:.85rem;color:#6B7280;z-index:1000;box-shadow:0 2px 12px rgba(0,0,0,.1)';
+    noDataDiv.innerHTML='📍 Les espaces apparaîtront ici<br>une fois géolocalisés.';
+    container.appendChild(noDataDiv);
+  }
 }
 
 // ── PAGE : ESPACE (DÉTAIL) ─────────────────────────
@@ -3841,6 +3942,7 @@ function go(page,param){
         html=pgEspaces();
         spLoadSpaces(function(){ if(S.page==='espaces') go('espaces'); });
       } else { html=pgEspaces(); }
+      if(S.spacesViewMode==='map') setTimeout(spInitSpaceMap,200);
       break;
     case 'espace':        html=pgEspace(S.params);break;
     case 'login':         html=pgLogin();break;
