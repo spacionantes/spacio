@@ -117,7 +117,17 @@ tailwind.config = {
   .btn-filled:hover { background: var(--spacio-blue-mid); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(21,28,51,0.2); }
 
   /* HERO — pleine largeur, style éditorial */
-  .hero { padding: 7rem 0 5.5rem; background: #FFFFFF; }
+  .hero { padding: 7rem 0 5.5rem; background: linear-gradient(rgba(10,15,35,0.58), rgba(10,15,35,0.58)), url('hero-bg.jpg') center/cover no-repeat; }
+  /* Textes hero sur fond sombre */
+  .hero .hero-tag { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.92); border: 1px solid rgba(255,255,255,0.18); }
+  .hero .hero-headline { color: #ffffff; }
+  .hero .hero-headline em { color: #a5b4fc; }
+  .hero .hero-sub { color: rgba(255,255,255,0.80); border-left-color: rgba(165,180,252,0.65); }
+  .hero .btn-primary { background: #ffffff; color: var(--spacio-blue-dark); }
+  .hero .btn-primary:hover { background: #f0f4ff; transform: translateY(-1px); box-shadow: 0 4px 18px rgba(0,0,0,0.28); }
+  .hero .btn-ghost { color: rgba(255,255,255,0.82); }
+  .hero .btn-ghost:hover { color: #ffffff; }
+  .hero .hero-stats-bar { border-top-color: rgba(255,255,255,0.15); }
   .hero-inner { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
   .hero-tag { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em; color: var(--spacio-blue-mid); background: rgba(104,127,210,.08); border-radius: 6px; padding: 0.3rem 0.75rem; margin-bottom: 2rem; }
   .hero-label-dot { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; animation: pulse-dot 2s ease-in-out infinite; }
@@ -490,7 +500,7 @@ tailwind.config = {
       <p class="hero-sub">Spacio facilite la mise en relation entre associations en quête d'un lieu et hôtes qui souhaitent valoriser leur espace. Sans commission, sans intermédiaire.</p>
       <div class="hero-btns">
         <a onclick="go('inscription','asso')" href="#" class="btn-primary">Je suis une association</a>
-        <a onclick="go('besoins')" href="#" class="btn-ghost">Voir les besoins
+        <a onclick="go('besoins');return false;" href="#" class="btn-ghost">Voir les besoins
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </a>
       </div>
@@ -589,7 +599,7 @@ tailwind.config = {
       </div>
     </div>
     <div class="needs-cta-row fade-up">
-      <a href="#" class="link-arrow">
+      <a href="#" onclick="go('besoins');return false;" class="link-arrow">
         Voir tous les besoins
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </a>
@@ -4072,7 +4082,7 @@ function wireHome(){
   var ca=document.querySelector('.cta-card.asso');if(ca)ca.onclick=function(){go('inscription','asso');};
   var ch=document.querySelector('.cta-card.hote');if(ch)ch.onclick=function(){go('inscription','hote');};
   // "Voir tous les besoins"
-  document.querySelectorAll('.link-arrow').forEach(function(a){if(a.textContent.includes('besoins'))a.onclick=function(){go('besoins');};});
+  document.querySelectorAll('.link-arrow').forEach(function(a){if(a.textContent.includes('besoins'))a.onclick=function(e){e.preventDefault();go('besoins');};});
   // Need cards
   document.querySelectorAll('.need-card').forEach(function(c,i){
     c.style.cursor='pointer';
