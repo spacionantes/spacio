@@ -1003,6 +1003,15 @@ function spDashArchive(id,type){
     });
 }
 
+function spDashMarkTrouve(id){
+  db.from('needs').update({statut:'trouve'}).eq('id',id).eq('user_id',S.user.id)
+    .then(function(r){
+      if(r.error){spToast('Erreur : '+r.error.message);return;}
+      spToast('🎉 Super ! Votre besoin est marqué comme "Trouvé". Bonne continuation !');
+      S.dashData.loaded=false;go('dashboard');
+    });
+}
+
 function spDashDelete(id){
   if(!confirm('Supprimer définitivement ? Cette action est irréversible.')) return;
   db.from('needs').delete().eq('id',id).eq('user_id',S.user.id)
@@ -2570,9 +2579,9 @@ function pgDashboard(){
         S.dashData.needs.map(function(n){
           var c=TYPE_COLORS[n.space_type]||TYPE_COLORS.reunion;
           var lbl=TYPE_LABELS[n.space_type]||n.space_type;
-          var sBg=n.statut==='en_recherche'?'rgba(34,197,94,.1)':'rgba(107,114,128,.1)';
-          var sCol=n.statut==='en_recherche'?'#166534':'#374151';
-          var sLbl=n.statut==='en_recherche'?'En recherche':n.statut==='archive'?'Archivé':'Trouvé';
+          var sBg=n.statut==='en_recherche'?'rgba(34,197,94,.1)':n.statut==='trouve'?'rgba(59,130,246,.12)':'rgba(107,114,128,.1)';
+          var sCol=n.statut==='en_recherche'?'#166534':n.statut==='trouve'?'#1D4ED8':'#374151';
+          var sLbl=n.statut==='en_recherche'?'🔍 En recherche':n.statut==='archive'?'Archivé':'✅ Trouvé';
           return '<div style="background:white;border-radius:14px;padding:1.25rem;border:1px solid rgba(58,75,130,.1);margin-bottom:.875rem;display:flex;gap:1rem;align-items:flex-start">'+
             '<div style="width:42px;height:42px;border-radius:10px;background:'+c[0]+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'+
               '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="'+c[1]+'" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>'+
@@ -2584,7 +2593,7 @@ function pgDashboard(){
               '</div>'+
               '<div style="font-size:.79rem;color:#6B7280;margin-bottom:.75rem">'+(n.ville||'—')+' · '+(n.frequence||'—')+'</div>'+
               '<div style="display:flex;gap:.5rem;flex-wrap:wrap">'+
-                '<button onclick="spToast(\'Modification prochainement disponible.\')" style="cursor:pointer;padding:.3rem .7rem;border:1px solid rgba(58,75,130,.2);border-radius:8px;background:white;font-size:.75rem;color:#687FD2;font-weight:500;transition:all .2s" onmouseover="this.style.background=\'rgba(58,75,130,.05)\'" onmouseout="this.style.background=\'white\'">Modifier</button>'+
+                (n.statut==='en_recherche'?'<button onclick="spDashMarkTrouve(\''+n.id+'\')" style="cursor:pointer;padding:.3rem .7rem;border:none;border-radius:8px;background:rgba(34,197,94,.12);font-size:.75rem;color:#166534;font-weight:600;transition:all .2s" onmouseover="this.style.background=\'rgba(34,197,94,.2)\'" onmouseout="this.style.background=\'rgba(34,197,94,.12)\'">✅ Trouvé !</button>':'')+
                 (n.statut!=='archive'?'<button onclick="spDashArchive(\''+n.id+'\',\'need\')" style="cursor:pointer;padding:.3rem .7rem;border:1px solid rgba(58,75,130,.2);border-radius:8px;background:white;font-size:.75rem;color:#6B7280;font-weight:500;transition:all .2s" onmouseover="this.style.background=\'rgba(58,75,130,.05)\'" onmouseout="this.style.background=\'white\'">Archiver</button>':'')+
                 '<button onclick="spDashDelete(\''+n.id+'\')" style="cursor:pointer;padding:.3rem .7rem;border:1px solid rgba(239,68,68,.2);border-radius:8px;background:white;font-size:.75rem;color:#DC2626;font-weight:500;transition:all .2s" onmouseover="this.style.background=\'rgba(239,68,68,.05)\'" onmouseout="this.style.background=\'white\'">Supprimer</button>'+
               '</div>'+
