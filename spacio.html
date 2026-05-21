@@ -200,7 +200,7 @@ tailwind.config = {
   #impact { background: var(--spacio-blue-dark); padding: 6rem 0; }
   .metrics-block { border: 1px solid rgba(255,255,255,.07); border-radius: 20px; padding: 3.5rem; }
   .metrics-block hr { border: none; border-top: 1px solid rgba(255,255,255,.07); margin: 2rem 0 0; }
-  .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
   .metric-item { text-align: center; padding: 2.5rem 1.5rem; border-right: 1px solid rgba(255,255,255,.07); }
   .metric-item:last-child { border-right: none; }
   .metric-num { font-family: 'Space Grotesk', sans-serif; font-size: clamp(2.75rem, 4.5vw, 4.25rem); font-weight: 700; color: var(--spacio-blue-light); line-height: 1; margin-bottom: 0.625rem; }
@@ -659,7 +659,7 @@ tailwind.config = {
     </div><!-- /focus-card -->
     <div class="focus-bottom fade-up">
       <div>
-        <h3>Rejoignez plus de 127 associations</h3>
+        <h3>Rejoignez plus de <span id="sp-stat-join">100</span> associations</h3>
         <p>Une mise en relation directe, sans intermédiaire ni commission.</p>
       </div>
       <a onclick="go('besoins')" href="#" class="focus-link">Explorer les besoins →</a>
@@ -681,14 +681,18 @@ tailwind.config = {
       <hr>
       <div class="metrics-grid">
         <div class="metric-item fade-up fade-up-d1">
-          <div class="metric-num counter" data-target="127">0</div>
+          <div class="metric-num counter" id="sp-stat-assos" data-target="0">—</div>
           <div class="metric-label">Associations inscrites</div>
         </div>
         <div class="metric-item fade-up fade-up-d2">
-          <div class="metric-num counter" data-target="89">0</div>
+          <div class="metric-num counter" id="sp-stat-besoins" data-target="0">—</div>
           <div class="metric-label">Besoins actifs en ce moment</div>
         </div>
         <div class="metric-item fade-up fade-up-d3">
+          <div class="metric-num counter" id="sp-stat-espaces" data-target="0">—</div>
+          <div class="metric-label">Espaces disponibles</div>
+        </div>
+        <div class="metric-item fade-up fade-up-d4">
           <div class="metric-num">100%</div>
           <div class="metric-label">Gratuit — 0 commission</div>
         </div>
@@ -843,6 +847,7 @@ const S={
   _dbSpaces: [],
   _spacesLoaded: false,
   _curSpace: null, _curSpaceId: null,
+  _statsLoaded: false,
   spaceFilters: {types:[], villes:[], search:''},
   dashData: { needs:[], spaces:[], convs:[], stats:{needsCount:0,spacesCount:0,convCount:0,viewsCount:0,activeCount:0}, loaded:false },
   activeConv: null,
@@ -3840,11 +3845,42 @@ function spRerenderGrid(){
   if(countEl)countEl.innerHTML='<strong style="color:#151C33">'+ns.length+'</strong> besoin'+(ns.length>1?'s':'')+' trouvé'+(ns.length>1?'s':'');
 }
 
+// ── STATS DYNAMIQUES ──────────────────────────────
+function spLoadStats(){
+  if(S._statsLoaded)return;
+  Promise.all([
+    db.from('profiles').select('id',{count:'exact',head:true}).eq('type','asso'),
+    db.from('needs').select('id',{count:'exact',head:true}).eq('statut','en_recherche'),
+    db.from('spaces').select('id',{count:'exact',head:true}).eq('statut','disponible')
+  ]).then(function(results){
+    var assos=results[0].count||0;
+    var besoins=results[1].count||0;
+    var espaces=results[2].count||0;
+    S._statsLoaded=true;
+    // Animer les compteurs
+    function updateStat(id,val){
+      var el=document.getElementById(id);
+      if(!el)return;
+      el.setAttribute('data-target',val);
+      el.textContent='0';
+      animateCounter(el,val,1600);
+    }
+    updateStat('sp-stat-assos',assos);
+    updateStat('sp-stat-besoins',besoins);
+    updateStat('sp-stat-espaces',espaces);
+    // Mise à jour du texte "Rejoignez plus de X associations"
+    var joinEl=document.getElementById('sp-stat-join');
+    if(joinEl&&assos>0)joinEl.textContent=assos;
+  }).catch(function(){/* silently fail — keep placeholder */});
+}
+
 // ── WIRE HOME BUTTONS ─────────────────────────────
 function wireHome(){
   // Render footer identique au footer SPA
   var sf=document.getElementById('sp-static-footer');
   if(sf) sf.innerHTML=spFooter();
+  // Charger les stats live
+  spLoadStats();
   // Boutons nav
   document.querySelectorAll('.btn-outline').forEach(function(b){if(b.textContent.trim().includes('asso'))b.onclick=function(){go('inscription','asso');};});
   document.querySelectorAll('.btn-filled').forEach(function(b){if(b.textContent.trim().includes('espace'))b.onclick=function(){go('inscription','hote');};});
