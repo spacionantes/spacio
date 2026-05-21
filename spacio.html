@@ -499,11 +499,11 @@ tailwind.config = {
           </a>
         </div>
       </div>
-      <a onclick="go('ressources')" href="#" class="nav-link-flat">Ressources</a>
+      <a onclick="go('ressources');return false;" href="#" class="nav-link-flat">Ressources</a>
     </div>
     <div class="nav-ctas" id="sp-nav-ctas">
-      <a onclick="go('login')" href="#" class="btn-outline">Se connecter</a>
-      <a onclick="go('inscription','asso')" href="#" class="btn-filled">Commencer</a>
+      <a onclick="go('login');return false;" href="#" class="btn-outline">Se connecter</a>
+      <a onclick="go('inscription','asso');return false;" href="#" class="btn-filled">Commencer</a>
     </div>
     <button class="sp-hamburger" id="sp-home-ham" onclick="spHomeNavToggle()" aria-label="Menu">
       <span></span><span></span><span></span>
@@ -520,8 +520,8 @@ tailwind.config = {
     <a onclick="go('intensiscore');spHomeNavToggle()" href="#" style="display:flex;align-items:center;gap:.4rem;color:#687FD2"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#687FD2" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>⚡ Intensiscore</a>
     <a onclick="go('ressources');spHomeNavToggle()" href="#">Ressources</a>
     <div class="mob-cta" id="sp-home-mob-ctas">
-      <a onclick="go('login');spHomeNavToggle()" href="#" class="btn-outline" style="font-size:.85rem">Se connecter</a>
-      <a onclick="go('inscription','asso');spHomeNavToggle()" href="#" class="btn-filled" style="font-size:.85rem">Commencer</a>
+      <a onclick="go('login');spHomeNavToggle();return false;" href="#" class="btn-outline" style="font-size:.85rem">Se connecter</a>
+      <a onclick="go('inscription','asso');spHomeNavToggle();return false;" href="#" class="btn-filled" style="font-size:.85rem">Commencer</a>
     </div>
   </div>
 </nav>
@@ -537,7 +537,7 @@ tailwind.config = {
       <h1 class="hero-headline">La plateforme qui connecte associations<br>et <em>espaces inutilisés.</em></h1>
       <p class="hero-sub">Spacio facilite la mise en relation entre associations en quête d'un lieu et hôtes qui souhaitent valoriser leur espace. Sans commission, sans intermédiaire.</p>
       <div class="hero-btns">
-        <a onclick="go('inscription','asso')" href="#" class="btn-primary">Je suis une association</a>
+        <a onclick="go('inscription','asso');return false;" href="#" class="btn-primary">Je suis une association</a>
         <a onclick="go('besoins');return false;" href="#" class="btn-ghost">Voir les besoins
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </a>
@@ -720,7 +720,7 @@ tailwind.config = {
         <h3>Rejoignez plus de <span id="sp-stat-join">100</span> associations</h3>
         <p>Une mise en relation directe, sans intermédiaire ni commission.</p>
       </div>
-      <a onclick="go('besoins')" href="#" class="focus-link">Explorer les besoins →</a>
+      <a onclick="go('besoins');return false;" href="#" class="focus-link">Explorer les besoins →</a>
     </div>
   </div>
 </section>
@@ -810,8 +810,8 @@ tailwind.config = {
     <h2 style="color:white; max-width:600px; margin:0 auto 1rem;" class="fade-up">La communauté Spacio vous attend</h2>
     <p style="color:rgba(255,255,255,0.55); font-size:1rem; margin-bottom:2.5rem; max-width:440px; margin-left:auto; margin-right:auto; line-height:1.65;" class="fade-up">Inscription gratuite, sans engagement, sans commission. Juste des espaces qui trouvent des associations.</p>
     <div style="display:flex; gap:0.875rem; justify-content:center; flex-wrap:wrap;" class="fade-up">
-      <a onclick="go('inscription','asso')" href="#" style="background:white; color:var(--spacio-blue-dark); font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:0.9rem; padding:0.875rem 1.75rem; border-radius:8px; text-decoration:none; transition:all 0.2s; display:inline-block;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 28px rgba(0,0,0,0.35)'" onmouseout="this.style.transform='';this.style.boxShadow=''">Je suis une association →</a>
-      <a onclick="go('inscription','hote')" href="#" style="background:rgba(255,255,255,0.07); color:white; font-family:'Plus Jakarta Sans',sans-serif; font-weight:600; font-size:0.9rem; padding:0.875rem 1.75rem; border-radius:8px; text-decoration:none; border:1.5px solid rgba(255,255,255,0.15); transition:all 0.2s; display:inline-block;" onmouseover="this.style.background='rgba(255,255,255,0.13)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'">J'ai un espace à proposer</a>
+      <a onclick="go('inscription','asso');return false;" href="#" style="background:white; color:var(--spacio-blue-dark); font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:0.9rem; padding:0.875rem 1.75rem; border-radius:8px; text-decoration:none; transition:all 0.2s; display:inline-block;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 28px rgba(0,0,0,0.35)'" onmouseout="this.style.transform='';this.style.boxShadow=''">Je suis une association →</a>
+      <a onclick="go('inscription','hote');return false;" href="#" style="background:rgba(255,255,255,0.07); color:white; font-family:'Plus Jakarta Sans',sans-serif; font-weight:600; font-size:0.9rem; padding:0.875rem 1.75rem; border-radius:8px; text-decoration:none; border:1.5px solid rgba(255,255,255,0.15); transition:all 0.2s; display:inline-block;" onmouseover="this.style.background='rgba(255,255,255,0.13)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'">J'ai un espace à proposer</a>
     </div>
   </div>
 </section>
