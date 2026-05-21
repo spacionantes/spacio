@@ -364,11 +364,29 @@ tailwind.config = {
     .sp-footer-4  { grid-template-columns:1fr!important }
     .sp-grid-2    { grid-template-columns:1fr!important }
     .needs-grid   { grid-template-columns:1fr }
-    /* Metrics: 1-col on small phones */
     .metrics-grid { grid-template-columns:1fr!important }
-    /* how-it-works grid */
     .how-grid { grid-template-columns:1fr!important }
   }
+
+  /* ── DROPDOWN NAV GROUPS ─────────────────────────── */
+  .sp-nav-groups { display:flex; align-items:center; gap:.25rem }
+  .sp-drop { position:relative }
+  .sp-drop-btn { display:flex; align-items:center; gap:.3rem; cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; font-size:.875rem; font-weight:500; color:var(--spacio-blue-mid); opacity:.85; background:none; border:none; padding:.375rem .625rem; border-radius:7px; transition:all .15s; line-height:1 }
+  .sp-drop-btn:hover, .sp-drop:hover .sp-drop-btn { opacity:1; color:var(--spacio-blue-dark); background:rgba(58,75,130,.05) }
+  .sp-drop-btn.active { opacity:1; font-weight:600; color:var(--spacio-blue-mid) }
+  .sp-drop-btn svg { transition:transform .2s; flex-shrink:0 }
+  .sp-drop:hover .sp-drop-btn svg { transform:rotate(180deg) }
+  .sp-drop-menu { display:none; position:absolute; top:calc(100% + .625rem); left:50%; transform:translateX(-50%); background:white; border:1px solid #EAECEF; border-radius:14px; box-shadow:0 8px 28px rgba(21,28,51,.1); padding:.5rem; min-width:220px; z-index:1001 }
+  .sp-drop:hover .sp-drop-menu { display:block }
+  .sp-drop-menu a { display:flex; align-items:center; gap:.625rem; padding:.6rem .875rem; border-radius:9px; font-family:'Plus Jakarta Sans',sans-serif; font-size:.835rem; font-weight:500; color:#3A4B82; text-decoration:none; cursor:pointer; transition:background .12s; white-space:nowrap }
+  .sp-drop-menu a:hover { background:rgba(58,75,130,.06); color:#151C33 }
+  .sp-drop-sep { height:1px; background:#EAECEF; margin:.35rem .5rem }
+  .sp-drop-label { font-size:.68rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#A2B0D9; padding:.4rem .875rem .125rem }
+  .nav-link-flat { font-family:'Plus Jakarta Sans',sans-serif; font-size:.875rem; font-weight:500; color:var(--spacio-blue-mid); opacity:.85; text-decoration:none; padding:.375rem .625rem; border-radius:7px; transition:all .15s; cursor:pointer; display:inline-block }
+  .nav-link-flat:hover { opacity:1; color:var(--spacio-blue-dark); background:rgba(58,75,130,.05) }
+  .nav-link-flat.active { opacity:1; font-weight:600 }
+  .mob-group-lbl { font-size:.65rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#A2B0D9; padding:.75rem 0 .1rem; display:block }
+  @media(max-width:768px){ .sp-nav-groups { display:none!important } }
 </style>
 </head>
 <body>
@@ -390,11 +408,27 @@ tailwind.config = {
       </svg>
       <span class="logo-text">Spacio</span>
     </a>
-    <div class="nav-links">
-      <a href="#comment">Comment ça marche</a>
-      <a href="#besoins">Besoins</a>
-      <a href="#guides">Guides</a>
-      <a href="#blog">Blog</a>
+    <div class="nav-links sp-nav-groups">
+      <div class="sp-drop">
+        <button class="sp-drop-btn">Associations <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="sp-drop-menu">
+          <div class="sp-drop-label">Trouver un espace</div>
+          <a onclick="go('espaces')" href="#">Espaces disponibles</a>
+          <a onclick="go('besoins')" href="#">Besoins en cours</a>
+          <div class="sp-drop-sep"></div>
+          <a onclick="go('poster-besoin')" href="#" style="font-weight:600;color:#3A4B82">+ Publier un besoin</a>
+        </div>
+      </div>
+      <div class="sp-drop">
+        <button class="sp-drop-btn">Hôtes <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="sp-drop-menu">
+          <div class="sp-drop-label">Mettre son espace à disposition</div>
+          <a onclick="go('besoins')" href="#">Besoins des associations</a>
+          <div class="sp-drop-sep"></div>
+          <a onclick="go('proposer-espace')" href="#" style="font-weight:600;color:#3A4B82">+ Proposer mon espace</a>
+        </div>
+      </div>
+      <a onclick="go('ressources')" href="#" class="nav-link-flat">Ressources</a>
     </div>
     <div class="nav-ctas" id="sp-nav-ctas">
       <a onclick="go('login')" href="#" class="btn-outline">Se connecter</a>
@@ -405,9 +439,14 @@ tailwind.config = {
     </button>
   </div>
   <div class="sp-nav-mob" id="sp-home-mob">
-    <a href="#comment" onclick="spHomeNavToggle()">Comment ça marche</a>
-    <a href="#besoins" onclick="spHomeNavToggle()">Besoins</a>
-    <a href="#guides" onclick="spHomeNavToggle()">Guides</a>
+    <span class="mob-group-lbl">Associations</span>
+    <a onclick="go('espaces');spHomeNavToggle()" href="#">Espaces disponibles</a>
+    <a onclick="go('besoins');spHomeNavToggle()" href="#">Besoins en cours</a>
+    <a onclick="go('poster-besoin');spHomeNavToggle()" href="#" style="font-weight:600;color:#3A4B82">+ Publier un besoin</a>
+    <span class="mob-group-lbl">Hôtes</span>
+    <a onclick="go('besoins');spHomeNavToggle()" href="#">Besoins des associations</a>
+    <a onclick="go('proposer-espace');spHomeNavToggle()" href="#" style="font-weight:600;color:#3A4B82">+ Proposer mon espace</a>
+    <a onclick="go('ressources');spHomeNavToggle()" href="#">Ressources</a>
     <div class="mob-cta" id="sp-home-mob-ctas">
       <a onclick="go('login');spHomeNavToggle()" href="#" class="btn-outline" style="font-size:.85rem">Se connecter</a>
       <a onclick="go('inscription','asso');spHomeNavToggle()" href="#" class="btn-filled" style="font-size:.85rem">Commencer</a>
@@ -687,54 +726,6 @@ tailwind.config = {
   </div>
 </section>
 
-<!-- ═══════════ GUIDES ═══════════ -->
-<section id="guides">
-  <div class="section-inner">
-    <div class="section-header fade-up">
-      <div class="section-tag">Ressources</div>
-      <h2>Guides pratiques <span>& ressources</span></h2>
-      <p class="sub">Tout ce qu'il faut pour démarrer sereinement, rédigé par notre équipe.</p>
-    </div>
-    <div class="guides-grid">
-      <a href="#" class="guide-card fade-up fade-up-d1">
-        <div class="guide-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3A4B82" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        </div>
-        <span class="guide-tag juridique">Juridique</span>
-        <h4>Convention de mise à disposition</h4>
-        <p>Modèle de convention gratuit et personnalisable, validé juridiquement pour encadrer le prêt de votre espace.</p>
-        <span class="guide-dl">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Télécharger le PDF
-        </span>
-      </a>
-      <a href="#" class="guide-card fade-up fade-up-d2">
-        <div class="guide-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-        </div>
-        <span class="guide-tag tuto">Tutoriel</span>
-        <h4>Comment poster un besoin efficace</h4>
-        <p>Tous les conseils pour rédiger une fiche besoin claire qui attire les bons hôtes rapidement.</p>
-        <span class="guide-dl" style="color:#059669;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          Lire le guide
-        </span>
-      </a>
-      <a href="#" class="guide-card fade-up fade-up-d3">
-        <div class="guide-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3A4B82" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </div>
-        <span class="guide-tag juridique">Juridique</span>
-        <h4>Assurance et responsabilité</h4>
-        <p>Comprendre qui est responsable lors du prêt d'un espace et comment se couvrir simplement.</p>
-        <span class="guide-dl">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Télécharger le PDF
-        </span>
-      </a>
-    </div>
-  </div>
-</section>
 
 <!-- ═══════════ CTA BANNER ═══════════ -->
 <section style="padding:5rem 0; background:var(--spacio-blue-dark);">
@@ -792,7 +783,7 @@ tailwind.config = {
       </div>
       <div class="footer-col">
         <h5>Ressources</h5>
-        <a href="#" onclick="go('guides')">Guides pratiques</a>
+        <a href="#" onclick="go('ressources')">Guides &amp; ressources</a>
         <a href="#" onclick="go('faq')">FAQ</a>
         <a href="#" onclick="go('contact')">Contact</a>
       </div>
@@ -1202,15 +1193,28 @@ function spNav(){
         spLogoSVG(28)+
         '<span style="font-family:Space Grotesk,sans-serif;font-size:1.1rem;font-weight:700;color:#151C33;letter-spacing:-.02em">Spacio</span>'+
       '</a>'+
-      '<div class="sp-nav-links-d" style="display:flex;gap:1.75rem">'+
-        '<a onclick="go(\'home\')" style="'+linkStyle+'" onmouseover="this.style.opacity=1;this.style.color=\'#151C33\'" onmouseout="this.style.opacity=.85;this.style.color=\'#3A4B82\'">Accueil</a>'+
-        '<a onclick="go(\'besoins\')" style="'+(S.page==='besoins'?linkActive:linkStyle)+'" onmouseover="this.style.opacity=1;this.style.color=\'#151C33\'" onmouseout="this.style.opacity='+(S.page==='besoins'?'1\';this.style.color=\'#687FD2\'':'.85\';this.style.color=\'#3A4B82\'')+'">Besoins</a>'+
-        '<a onclick="go(\'espaces\')" style="'+(S.page==='espaces'||S.page==='espace'?linkActive:linkStyle)+'" onmouseover="this.style.opacity=1;this.style.color=\'#151C33\'" onmouseout="this.style.opacity='+(S.page==='espaces'||S.page==='espace'?'1\';this.style.color=\'#687FD2\'':'.85\';this.style.color=\'#3A4B82\'')+'">Espaces</a>'+
-        '<a onclick="go(\'a-propos\')" style="'+linkStyle+'" onmouseover="this.style.opacity=1;this.style.color=\'#151C33\'" onmouseout="this.style.opacity=.85;this.style.color=\'#3A4B82\'">À propos</a>'+
-        (user&&user.type==='hote'?
-          '<a onclick="go(\'intensiscore\')" style="'+(S.page==='intensiscore'?linkActive:linkStyle)+';display:inline-flex;align-items:center;gap:.3rem" onmouseover="this.style.opacity=1;this.style.color=\'#151C33\'" onmouseout="this.style.opacity=.85;this.style.color=\'#3A4B82\'">'+
-            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Intensiscore'+
-          '</a>':'')+
+      '<div class="sp-nav-links-d sp-nav-groups">'+
+        '<div class="sp-drop">'+
+          '<button class="sp-drop-btn'+((['besoins','espaces','espace','poster-besoin'].indexOf(S.page)>-1)?' active':'')+'">Associations <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>'+
+          '<div class="sp-drop-menu">'+
+            '<div class="sp-drop-label">Trouver un espace</div>'+
+            '<a onclick="go(\'espaces\')">Espaces disponibles</a>'+
+            '<a onclick="go(\'besoins\')">Besoins en cours</a>'+
+            '<div class="sp-drop-sep"></div>'+
+            '<a onclick="go(\'poster-besoin\')" style="font-weight:600;color:#3A4B82">+ Publier un besoin</a>'+
+          '</div>'+
+        '</div>'+
+        '<div class="sp-drop">'+
+          '<button class="sp-drop-btn'+((['proposer-espace','intensiscore'].indexOf(S.page)>-1)?' active':'')+'">Hôtes <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>'+
+          '<div class="sp-drop-menu">'+
+            '<div class="sp-drop-label">Mettre son espace à disposition</div>'+
+            '<a onclick="go(\'besoins\')">Besoins des associations</a>'+
+            '<div class="sp-drop-sep"></div>'+
+            '<a onclick="go(\'proposer-espace\')" style="font-weight:600;color:#3A4B82">+ Proposer mon espace</a>'+
+            (user&&user.type==='hote'?'<div class="sp-drop-sep"></div><a onclick="go(\'intensiscore\')" style="display:flex;align-items:center;gap:.5rem"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#687FD2" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>⚡ Intensiscore</a>':'')+
+          '</div>'+
+        '</div>'+
+        '<a onclick="go(\'ressources\')" class="nav-link-flat'+(S.page==='ressources'?' active':'')+'">Ressources</a>'+
       '</div>'+
       '<div style="display:flex;gap:.5rem;align-items:center">'+
         (user
@@ -1232,11 +1236,15 @@ function spNav(){
       '</button>'+
     '</div>'+
     '<div class="sp-nav-mob" id="sp-spa-mob">'+
-      '<a onclick="go(\'home\');spSpaNavToggle()" style="cursor:pointer">Accueil</a>'+
-      '<a onclick="go(\'besoins\');spSpaNavToggle()" style="cursor:pointer">Besoins</a>'+
-      '<a onclick="go(\'espaces\');spSpaNavToggle()" style="cursor:pointer">Espaces</a>'+
-      '<a onclick="go(\'a-propos\');spSpaNavToggle()" style="cursor:pointer">À propos</a>'+
-      (user&&user.type==='hote'?'<a onclick="go(\'intensiscore\');spSpaNavToggle()" style="cursor:pointer;display:flex;align-items:center;gap:.35rem"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Intensiscore</a>':'')+
+      '<span class="mob-group-lbl">Associations</span>'+
+      '<a onclick="go(\'espaces\');spSpaNavToggle()" style="cursor:pointer">Espaces disponibles</a>'+
+      '<a onclick="go(\'besoins\');spSpaNavToggle()" style="cursor:pointer">Besoins en cours</a>'+
+      '<a onclick="go(\'poster-besoin\');spSpaNavToggle()" style="cursor:pointer;font-weight:600;color:#3A4B82">+ Publier un besoin</a>'+
+      '<span class="mob-group-lbl">Hôtes</span>'+
+      '<a onclick="go(\'besoins\');spSpaNavToggle()" style="cursor:pointer">Besoins des associations</a>'+
+      '<a onclick="go(\'proposer-espace\');spSpaNavToggle()" style="cursor:pointer;font-weight:600;color:#3A4B82">+ Proposer mon espace</a>'+
+      (user&&user.type==='hote'?'<a onclick="go(\'intensiscore\');spSpaNavToggle()" style="cursor:pointer;display:flex;align-items:center;gap:.5rem"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#687FD2" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>⚡ Intensiscore</a>':'')+
+      '<a onclick="go(\'ressources\');spSpaNavToggle()" style="cursor:pointer">Ressources</a>'+
       '<div class="mob-cta">'+
         (user
           ? '<a onclick="go(\'dashboard\');spSpaNavToggle()" style="cursor:pointer;background:#151C33;color:white;padding:.5rem 1.125rem;border-radius:8px;font-family:Plus Jakarta Sans,sans-serif;font-size:.85rem;font-weight:600;text-decoration:none">Mon espace</a>'
@@ -1340,7 +1348,7 @@ function spFooter(){
         '</div>'+
         '<div>'+
           '<h5 style="'+hdr+'">Ressources</h5>'+
-          '<a onclick="go(\'guides\')" style="'+col1+'" onmouseover="this.style.color=\'white\'" onmouseout="this.style.color=\'rgba(255,255,255,.5)\'">Guides pratiques</a>'+
+          '<a onclick="go(\'ressources\')" style="'+col1+'" onmouseover="this.style.color=\'white\'" onmouseout="this.style.color=\'rgba(255,255,255,.5)\'">Guides &amp; ressources</a>'+
           '<a onclick="go(\'faq\')" style="'+col1+'" onmouseover="this.style.color=\'white\'" onmouseout="this.style.color=\'rgba(255,255,255,.5)\'">FAQ</a>'+
           '<a onclick="go(\'contact\')" style="'+col1+'" onmouseover="this.style.color=\'white\'" onmouseout="this.style.color=\'rgba(255,255,255,.5)\'">Contact</a>'+
           '<a onclick="go(\'a-propos\')" style="'+col1+'" onmouseover="this.style.color=\'white\'" onmouseout="this.style.color=\'rgba(255,255,255,.5)\'">À propos</a>'+
@@ -3543,6 +3551,78 @@ function pgConversation(convId){
   spFooter();
 }
 
+// ── PAGE : RESSOURCES ────────────────────────────
+function pgRessources(){
+  var dlIco='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+  var arIco='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+  var cards=[
+    {cat:'Juridique',cc:'#DC2626',cb:'#FEF2F2',ic:'#3A4B82',
+     svg:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+     title:'Convention de mise à disposition',
+     desc:'Modèle gratuit et personnalisable, validé juridiquement pour encadrer le prêt de votre espace.',
+     cta:'Télécharger le PDF',ico:dlIco},
+    {cat:'Tutoriel',cc:'#059669',cb:'#ECFDF5',ic:'#059669',
+     svg:'<circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>',
+     title:'Comment poster un besoin efficace',
+     desc:'Tous les conseils pour rédiger une fiche besoin claire qui attire les bons hôtes rapidement.',
+     cta:'Lire le guide',ico:arIco},
+    {cat:'Juridique',cc:'#DC2626',cb:'#FEF2F2',ic:'#3A4B82',
+     svg:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+     title:'Assurance et responsabilité',
+     desc:"Comprendre qui est responsable lors du prêt d'un espace et comment se couvrir simplement.",
+     cta:'Télécharger le PDF',ico:dlIco},
+    {cat:'Tutoriel',cc:'#059669',cb:'#ECFDF5',ic:'#059669',
+     svg:'<rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 21V8h8v13M2 9h20"/>',
+     title:"Bien accueillir une association",
+     desc:"Guide pratique pour les hôtes : préparer son espace, fixer les règles et gérer la relation sereinement.",
+     cta:'Lire le guide',ico:arIco},
+    {cat:'Outil',cc:'#3A4B82',cb:'rgba(58,75,130,.08)',ic:'#687FD2',
+     svg:'<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>',
+     title:"Intensiscore — mesurer l'intensité d'usage",
+     desc:"Calculez le taux d'usage de votre espace et découvrez votre potentiel d'accueil. Gratuit pour les hôtes.",
+     cta:'Démarrer le diagnostic',ico:arIco,fn:"go('intensiscore')"},
+    {cat:'FAQ',cc:'#7C3AED',cb:'#F5F3FF',ic:'#7C3AED',
+     svg:'<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+     title:'Questions fréquentes',
+     desc:'Retrouvez toutes les réponses aux questions les plus posées par nos utilisateurs et partenaires.',
+     cta:'Voir la FAQ',ico:arIco,fn:"go('faq')"}
+  ];
+  return spNav()+
+    '<div style="min-height:100vh;background:#F8F9FC;padding-bottom:4rem">'+
+      '<div style="background:white;border-bottom:1px solid #EAECEF;padding:3.5rem 1.5rem 3rem">'+
+        '<div style="max-width:800px;margin:0 auto">'+
+          '<div style="display:inline-flex;align-items:center;gap:.4rem;font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#687FD2;background:rgba(104,127,210,.08);border-radius:6px;padding:.3rem .875rem;margin-bottom:1.125rem">Ressources</div>'+
+          '<h1 style="font-family:Space Grotesk,sans-serif;font-size:clamp(1.75rem,4vw,2.75rem);font-weight:800;color:#151C33;letter-spacing:-.025em;margin-bottom:.75rem;line-height:1.15">Guides pratiques <span style="color:#687FD2">&amp; ressources</span></h1>'+
+          '<p style="font-size:1rem;color:#6B7280;line-height:1.7;max-width:520px">Conventions juridiques, tutoriels, outils et FAQ — tout ce qu\'il faut pour démarrer sereinement.</p>'+
+        '</div>'+
+      '</div>'+
+      '<div style="max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem">'+
+        '<div class="sp-grid-3">'+
+          cards.map(function(c){
+            var handler=c.fn?'onclick="'+c.fn+'"':'href="#"';
+            return '<a '+handler+' style="cursor:pointer;background:white;border-radius:16px;border:1.5px solid rgba(58,75,130,.1);padding:1.5rem;display:flex;flex-direction:column;gap:.875rem;transition:all .25s;text-decoration:none;min-height:220px" onmouseover="this.style.boxShadow=\'0 8px 30px rgba(58,75,130,.15)\';this.style.transform=\'translateY(-3px)\';this.style.borderColor=\'rgba(58,75,130,.25)\'" onmouseout="this.style.boxShadow=\'\';this.style.transform=\'\';this.style.borderColor=\'rgba(58,75,130,.1)\'">'+
+              '<div style="width:48px;height:48px;border-radius:12px;background:'+c.cb+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'+
+                '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="'+c.ic+'" stroke-width="2">'+c.svg+'</svg>'+
+              '</div>'+
+              '<span style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:'+c.cc+'">'+c.cat+'</span>'+
+              '<h4 style="font-family:Space Grotesk,sans-serif;font-size:.975rem;font-weight:700;color:#151C33;line-height:1.3;margin:0">'+c.title+'</h4>'+
+              '<p style="font-size:.82rem;color:#6B7280;line-height:1.55;margin:0;flex:1">'+c.desc+'</p>'+
+              '<span style="display:flex;align-items:center;gap:.3rem;font-size:.8rem;font-weight:600;color:'+c.cc+'">'+c.ico+c.cta+'</span>'+
+            '</a>';
+          }).join('')+
+        '</div>'+
+        '<div style="margin-top:3rem;background:#151C33;border-radius:20px;padding:2.25rem 2.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.5rem">'+
+          '<div>'+
+            '<h3 style="font-family:Space Grotesk,sans-serif;font-size:1.2rem;font-weight:700;color:white;margin-bottom:.3rem">Vous ne trouvez pas votre réponse ?</h3>'+
+            '<p style="font-size:.875rem;color:rgba(255,255,255,.5)">Notre équipe est disponible pour vous aider.</p>'+
+          '</div>'+
+          '<a onclick="go(\'contact\')" style="cursor:pointer;background:white;color:#151C33;padding:.875rem 1.75rem;border-radius:10px;font-family:Space Grotesk,sans-serif;font-size:.875rem;font-weight:700;text-decoration:none;white-space:nowrap;transition:opacity .2s" onmouseover="this.style.opacity=.9" onmouseout="this.style.opacity=1">Nous contacter →</a>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+  spFooter();
+}
+
 // ── ROUTER ────────────────────────────────────────
 function go(page,param){
   S.page=page;S.params=param||{};
@@ -3588,7 +3668,8 @@ function go(page,param){
     case 'contact':       html=pgContact();break;
     case 'mentions':      html=pgMentions();break;
     case 'cgu':           html=pgCGU();break;
-    case 'guides':        html=pgPlaceholder('Guides pratiques','Des guides PDF pour bien démarrer sur Spacio seront disponibles prochainement.','home');break;
+    case 'ressources':    html=pgRessources();break;
+    case 'guides':        html=pgRessources();break;
     case 'intensiscore':  iscoreInitState(); html=pgIntensiscore();break;
     default:              overlay.style.display='none';return;
   }
@@ -3631,12 +3712,12 @@ function wireHome(){
     if(btn)btn.onclick=function(e){e.stopPropagation();go('inscription','hote');};
   });
   // Guide cards
-  document.querySelectorAll('.guide-card').forEach(function(c){c.onclick=function(){go('guides');};});
+  document.querySelectorAll('.guide-card').forEach(function(c){c.onclick=function(){go('ressources');};});
   // Nav links
   document.querySelectorAll('.nav-links a').forEach(function(a){
     var href=a.getAttribute('href');
     if(href==='#besoins')a.onclick=function(e){e.preventDefault();go('besoins');};
-    if(href==='#guides')a.onclick=function(e){e.preventDefault();go('guides');};
+    if(href==='#guides')a.onclick=function(e){e.preventDefault();go('ressources');};
   });
   // CTA banner (section with gradient bg)
   document.querySelectorAll('section a').forEach(function(a){
