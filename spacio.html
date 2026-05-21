@@ -101,7 +101,40 @@ tailwind.config = {
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
-  body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--ink); overflow-x: hidden; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--ink); overflow-x: hidden; cursor: none; }
+  a, button, [onclick], input, textarea, select, label { cursor: none; }
+
+  /* ── CURSEUR CUSTOM ── */
+  #sp-cursor-dot {
+    position: fixed; top: 0; left: 0; z-index: 99999; pointer-events: none;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #FF8C2A;
+    box-shadow: 0 0 0 2px rgba(255,140,42,0.35);
+    transform: translate(-50%,-50%);
+    transition: width .12s, height .12s, background .12s;
+    will-change: transform;
+  }
+  #sp-cursor-ring {
+    position: fixed; top: 0; left: 0; z-index: 99998; pointer-events: none;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 2px solid rgba(255,140,42,0.55);
+    transform: translate(-50%,-50%);
+    will-change: transform;
+    transition: width .18s, height .18s, border-color .18s, opacity .18s;
+  }
+  body.sp-cursor-click #sp-cursor-dot {
+    width: 12px; height: 12px;
+    background: #FF6A00;
+    box-shadow: 0 0 0 5px rgba(255,106,0,0.18);
+  }
+  body.sp-cursor-hover #sp-cursor-dot {
+    width: 6px; height: 6px; background: #FF6A00;
+  }
+  body.sp-cursor-hover #sp-cursor-ring {
+    width: 42px; height: 42px;
+    border-color: rgba(255,106,0,0.7);
+    background: rgba(255,140,42,0.05);
+  }
 
   /* NAV */
   nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(255,255,255,0.97); backdrop-filter: blur(14px); border-bottom: 1px solid var(--spacio-border); padding: 0.875rem 0; transition: box-shadow 0.3s ease; }
@@ -4169,6 +4202,56 @@ setTimeout(function(){
     wireHome();
   }
 },200);
+</script>
+<!-- ── CURSEUR CUSTOM ─────────────────────────────── -->
+<div id="sp-cursor-dot"></div>
+<div id="sp-cursor-ring"></div>
+<script>
+(function(){
+  var dot  = document.getElementById('sp-cursor-dot');
+  var ring = document.getElementById('sp-cursor-ring');
+  var mx=window.innerWidth/2, my=window.innerHeight/2;
+  var rx=mx, ry=my;
+  var raf;
+
+  document.addEventListener('mousemove', function(e){
+    mx = e.clientX; my = e.clientY;
+    dot.style.transform = 'translate(calc('+mx+'px - 50%), calc('+my+'px - 50%))';
+  });
+
+  // Ring suit avec un léger lag (lerp)
+  function loop(){
+    rx += (mx - rx) * 0.13;
+    ry += (my - ry) * 0.13;
+    ring.style.transform = 'translate(calc('+rx.toFixed(2)+'px - 50%), calc('+ry.toFixed(2)+'px - 50%))';
+    raf = requestAnimationFrame(loop);
+  }
+  loop();
+
+  // Hover sur éléments cliquables → état "hover"
+  document.addEventListener('mouseover', function(e){
+    var el = e.target;
+    var clickable = el.closest('a,button,[onclick],input,textarea,select,label');
+    if(clickable) document.body.classList.add('sp-cursor-hover');
+    else document.body.classList.remove('sp-cursor-hover');
+  });
+
+  // Click → flash
+  document.addEventListener('mousedown', function(){
+    document.body.classList.add('sp-cursor-click');
+  });
+  document.addEventListener('mouseup', function(){
+    document.body.classList.remove('sp-cursor-click');
+  });
+
+  // Masquer quand souris quitte la fenêtre
+  document.addEventListener('mouseleave', function(){
+    dot.style.opacity='0'; ring.style.opacity='0';
+  });
+  document.addEventListener('mouseenter', function(){
+    dot.style.opacity='1'; ring.style.opacity='1';
+  });
+})();
 </script>
 </body>
 </html>
