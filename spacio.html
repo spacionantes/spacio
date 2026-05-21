@@ -426,6 +426,8 @@ tailwind.config = {
           <a onclick="go('besoins')" href="#">Besoins des associations</a>
           <div class="sp-drop-sep"></div>
           <a onclick="go('proposer-espace')" href="#" style="font-weight:600;color:#3A4B82">+ Proposer mon espace</a>
+          <div class="sp-drop-sep"></div>
+          <a onclick="go('intensiscore')" href="#" style="display:flex;align-items:center;gap:.5rem;color:#687FD2"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#687FD2" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>⚡ Intensiscore</a>
         </div>
       </div>
       <a onclick="go('ressources')" href="#" class="nav-link-flat">Ressources</a>
@@ -446,6 +448,7 @@ tailwind.config = {
     <span class="mob-group-lbl">Hôtes</span>
     <a onclick="go('besoins');spHomeNavToggle()" href="#">Besoins des associations</a>
     <a onclick="go('proposer-espace');spHomeNavToggle()" href="#" style="font-weight:600;color:#3A4B82">+ Proposer mon espace</a>
+    <a onclick="go('intensiscore');spHomeNavToggle()" href="#" style="display:flex;align-items:center;gap:.4rem;color:#687FD2"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#687FD2" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>⚡ Intensiscore</a>
     <a onclick="go('ressources');spHomeNavToggle()" href="#">Ressources</a>
     <div class="mob-cta" id="sp-home-mob-ctas">
       <a onclick="go('login');spHomeNavToggle()" href="#" class="btn-outline" style="font-size:.85rem">Se connecter</a>
@@ -740,66 +743,8 @@ tailwind.config = {
   </div>
 </section>
 
-<!-- ═══════════ FOOTER ═══════════ -->
-<footer id="blog">
-  <div class="footer-inner">
-    <div class="footer-top">
-      <div class="footer-brand">
-        <a href="#" class="logo-wrap">
-          <svg width="42" height="34" viewBox="0 0 155 125" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <polygon points="10,44 120,44 120,22 10,22" fill="#687FD2"/>
-            <polygon points="10,22 120,22 142,8 32,8"   fill="#8A9FE4"/>
-            <polygon points="120,22 142,8 142,30 120,44" fill="#5570C0"/>
-            <polygon points="10,78 120,78 120,56 10,56" fill="#3A4B82"/>
-            <polygon points="10,56 120,56 142,42 32,42"  fill="#4D5E95"/>
-            <polygon points="120,56 142,42 142,64 120,78" fill="#2C3D75"/>
-            <polygon points="10,116 120,116 120,90 10,90" fill="#151C33"/>
-            <polygon points="10,90 120,90 142,76 32,76"   fill="#1E2844"/>
-            <polygon points="120,90 142,76 142,102 120,116" fill="#0D1225"/>
-          </svg>
-          <span class="logo-text light">Spacio</span>
-        </a>
-        <p>Faciliter la mise en relation entre associations et espaces disponibles. Partout en France, gratuitement.</p>
-        <div style="margin-top:1rem;">
-          <span class="badge-loi">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 22V8l9-6 9 6v14"/><path d="M9 22V12h6v10"/></svg>
-            Association loi 1901 — Paris
-          </span>
-        </div>
-      </div>
-      <div class="footer-col">
-        <h5>Associations</h5>
-        <a href="#">Explorer les espaces</a>
-        <a href="#">Poster un besoin</a>
-        <a href="#">Mon compte</a>
-        <a href="#">Messagerie</a>
-      </div>
-      <div class="footer-col">
-        <h5>Hôtes</h5>
-        <a href="#">Parcourir les besoins</a>
-        <a href="#">Proposer mon espace</a>
-        <a href="#">Mon compte</a>
-        <a href="#">Alertes email</a>
-      </div>
-      <div class="footer-col">
-        <h5>Ressources</h5>
-        <a href="#" onclick="go('ressources')">Guides &amp; ressources</a>
-        <a href="#" onclick="go('faq')">FAQ</a>
-        <a href="#" onclick="go('contact')">Contact</a>
-      </div>
-      <div class="footer-col">
-        <h5>Spacio</h5>
-        <a href="#" onclick="go('a-propos')">À propos</a>
-        <a href="#" onclick="go('mentions')">Mentions légales</a>
-        <a href="#" onclick="go('cgu')">CGU</a>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <p>© 2025 Spacio. Fait avec <span class="heart">♥</span> pour le monde associatif français.</p>
-      <p style="color:rgba(255,255,255,0.25); font-size:0.75rem;">Pas de commission · Pas de publicité · Open source</p>
-    </div>
-  </div>
-</footer>
+<!-- Footer rendu par spFooter() via wireHome() pour garantir l'uniformité -->
+<div id="sp-static-footer"></div>
 
 <script>
 // NAV scroll behavior
@@ -1211,7 +1156,7 @@ function spNav(){
             '<a onclick="go(\'besoins\')">Besoins des associations</a>'+
             '<div class="sp-drop-sep"></div>'+
             '<a onclick="go(\'proposer-espace\')" style="font-weight:600;color:#3A4B82">+ Proposer mon espace</a>'+
-            (user&&user.type==='hote'?'<div class="sp-drop-sep"></div><a onclick="go(\'intensiscore\')" style="display:flex;align-items:center;gap:.5rem"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#687FD2" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>⚡ Intensiscore</a>':'')+
+            '<div class="sp-drop-sep"></div><a onclick="go(\'intensiscore\')" style="display:flex;align-items:center;gap:.5rem"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#687FD2" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>⚡ Intensiscore</a>'+
           '</div>'+
         '</div>'+
         '<a onclick="go(\'ressources\')" class="nav-link-flat'+(S.page==='ressources'?' active':'')+'">Ressources</a>'+
@@ -3696,6 +3641,9 @@ function spRerenderGrid(){
 
 // ── WIRE HOME BUTTONS ─────────────────────────────
 function wireHome(){
+  // Render footer identique au footer SPA
+  var sf=document.getElementById('sp-static-footer');
+  if(sf) sf.innerHTML=spFooter();
   // Boutons nav
   document.querySelectorAll('.btn-outline').forEach(function(b){if(b.textContent.trim().includes('asso'))b.onclick=function(){go('inscription','asso');};});
   document.querySelectorAll('.btn-filled').forEach(function(b){if(b.textContent.trim().includes('espace'))b.onclick=function(){go('inscription','hote');};});
