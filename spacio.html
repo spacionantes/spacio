@@ -2059,18 +2059,21 @@ function spPbPublish(){
   var btn=document.querySelector('[onclick="spPbPublish()"]');
   if(btn){btn.disabled=true;btn.textContent='Publication...';}
 
+  var TYPE_LABELS_PB={'reunion':'Salle de réunion','atelier':'Atelier / Studio','polyvalente':'Salle polyvalente','bureau':'Bureau / Open space','exterieur':'Espace extérieur','autre':'Autre espace'};
+  var spaceType=d.spaceType||'reunion';
+  var typeLabel=TYPE_LABELS_PB[spaceType]||spaceType;
   db.from('needs').insert({
     user_id:        S.user.id,
-    title:          (d.typeLabel||d.type)+' — '+(d.ville||'France'),
+    title:          typeLabel+' — '+(d.ville||'France'),
     description:    d.desc||'',
-    space_type:     d.type||'reunion',
+    space_type:     spaceType,
     superficie_min: d.areaMin?parseInt(d.areaMin):null,
     superficie_max: d.areaMax?parseInt(d.areaMax):null,
     frequence:      ({'Hebdomadaire':'hebdo','Mensuelle':'mensuelle','Ponctuelle':'ponctuelle','Autre':'autre'}[d.freq]||d.freq||'ponctuelle'),
     creneaux:       d.creneau?[d.creneau]:[],
     ville:          d.ville||'',
     quartier:       d.quartier||'',
-    equipements:    d.equipements||[],
+    equipements:    d.equip||[],
     budget_indicatif: d.budget||'À discuter',
     visibility:     d.visibility||'public'
   }).select().single().then(function(r){
@@ -2383,9 +2386,11 @@ function spPePublish(){
 }
 
 function spPeDoInsert(d,coords,btn){
+  var TYPE_LABELS_PE={'reunion':'Salle de réunion','polyvalente':'Salle polyvalente','bureau':'Bureau / Open space','studio':'Studio','autre':'Autre espace'};
+  var peTLabel=TYPE_LABELS_PE[d.spaceType]||d.spaceType||'Espace';
   db.from('spaces').insert({
     user_id:       S.user.id,
-    title:         d.nom||(d.typeLabel+' — '+(d.ville||'France')),
+    title:         d.nom||(peTLabel+' — '+(d.ville||'France')),
     description:   d.desc||'',
     space_type:    d.spaceType||'polyvalente',
     superficie:    d.superficie?parseInt(d.superficie):null,
