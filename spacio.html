@@ -4,6 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Spacio — Des espaces pour les associations</title>
+<meta name="description" content="Spacio connecte les associations qui cherchent un espace avec les hôtes qui souhaitent mettre leur lieu à disposition. Gratuit, simple, humain.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Spacio">
+<meta property="og:title" content="Spacio — Des espaces pour les associations">
+<meta property="og:description" content="Spacio connecte les associations qui cherchent un espace avec les hôtes qui souhaitent mettre leur lieu à disposition. Gratuit, simple, humain.">
+<meta property="og:url" content="https://spacionantes.github.io/spacio/spacio.html">
+<meta property="og:image" content="https://spacionantes.github.io/spacio/og-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Spacio — Des espaces pour les associations">
+<meta name="twitter:description" content="Spacio connecte les associations qui cherchent un espace avec les hôtes qui souhaitent mettre leur lieu à disposition.">
+<link rel="canonical" href="https://spacionantes.github.io/spacio/spacio.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -3686,8 +3697,81 @@ function pgRessources(){
 }
 
 // ── ROUTER ────────────────────────────────────────
+// ── META & DEEP LINKS ────────────────────────────────────────────────────────
+function spSetMeta(attr,value,isName){
+  var sel=isName?'meta[name="'+attr+'"]':'meta[property="'+attr+'"]';
+  var el=document.querySelector(sel);
+  if(el)el.setAttribute('content',value||'');
+}
+
+function spUpdateMeta(page,param){
+  var DEFAULT_DESC='Spacio connecte les associations qui cherchent un espace avec les hôtes qui souhaitent mettre leur lieu à disposition.';
+  var title='Spacio — Des espaces pour les associations';
+  var desc=DEFAULT_DESC;
+  var img='';
+  switch(page){
+    case 'home':break;
+    case 'besoins':   title='Besoins des associations — Spacio'; desc='Découvrez ce que cherchent les associations : salles de réunion, ateliers, espaces de stockage et plus.'; break;
+    case 'espaces':   title='Espaces disponibles — Spacio'; desc='Trouvez parmi nos espaces celui qui correspond aux besoins de votre association.'; break;
+    case 'espace':
+      var _sp=S._dbSpaces.find(function(s){return s.id===param;})||S._curSpace;
+      if(_sp){
+        title=(_sp.title||'Espace')+(_sp.ville?' à '+_sp.ville:'')+' — Spacio';
+        desc=_sp.description||'Consultez les détails de cet espace disponible pour votre association.';
+        var _ph=Array.isArray(_sp.photos)?_sp.photos:[];
+        if(_ph.length)img=_ph[0];
+      }
+      break;
+    case 'poster-besoin':   title='Publier un besoin — Spacio'; desc='Décrivez l\'espace dont vous avez besoin et recevez des propositions de la part des hôtes.'; break;
+    case 'proposer-espace': title='Proposer mon espace — Spacio'; desc='Mettez votre lieu à disposition des associations. Gratuit, simple.'; break;
+    case 'intensiscore':    title='Intensiscore — Spacio'; desc='Évaluez le potentiel d\'accueil de votre espace en quelques minutes.'; break;
+    case 'ressources':      title='Ressources — Spacio'; desc='Guides pratiques, outils et ressources juridiques pour associations et hôtes.'; break;
+    case 'a-propos':        title='À propos — Spacio'; desc=DEFAULT_DESC; break;
+    case 'faq':             title='FAQ — Spacio'; desc='Les questions fréquentes sur Spacio, pour les associations et les hôtes.'; break;
+    case 'contact':         title='Contact — Spacio'; break;
+    case 'dashboard':       title='Mon espace — Spacio'; break;
+    case 'login':           title='Connexion — Spacio'; break;
+    case 'inscription':     title='Créer un compte — Spacio'; break;
+  }
+  document.title=title;
+  spSetMeta('og:title',title);
+  spSetMeta('og:description',desc);
+  spSetMeta('og:url',window.location.href);
+  if(img)spSetMeta('og:image',img);
+  spSetMeta('description',desc,true);
+  spSetMeta('twitter:title',title,true);
+  spSetMeta('twitter:description',desc,true);
+}
+
+function spPageHash(page,param){
+  if(!page||page==='home')return '';
+  return '#'+page+(param&&typeof param==='string'?'/'+param:'');
+}
+
+var _spNavLock=false;
+function spRouteFromHash(){
+  var hash=window.location.hash.replace(/^#/,'');
+  if(!hash){go('home');return;}
+  var parts=hash.split('/');
+  var page=parts[0], param=parts[1]||null;
+  _spNavLock=true;
+  go(page,param);
+  setTimeout(function(){_spNavLock=false;},50);
+}
+
+window.addEventListener('popstate',function(){
+  if(!_spNavLock)spRouteFromHash();
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
 function go(page,param){
   S.page=page;S.params=param||{};
+  // Update URL & meta
+  var newHash=spPageHash(page,param);
+  if(!_spNavLock){
+    try{ history.pushState(null,'',newHash||window.location.pathname.replace(/#.*/,'')); }catch(e){}
+  }
+  spUpdateMeta(page,typeof param==='string'?param:null);
   var overlay=document.getElementById('sp-overlay');
   window.scrollTo(0,0);
   if(page==='home'){
@@ -3793,7 +3877,16 @@ function wireHome(){
 }
 
 // ── BOOT ─────────────────────────────────────────
-setTimeout(wireHome,150);
+setTimeout(function(){
+  // Deep-link: si un hash est présent au chargement, naviguer vers cette page
+  if(window.location.hash && window.location.hash.length>1){
+    _spNavLock=true;
+    spRouteFromHash();
+    setTimeout(function(){_spNavLock=false;},50);
+  } else {
+    wireHome();
+  }
+},200);
 </script>
 </body>
 </html>
