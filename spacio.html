@@ -306,6 +306,14 @@ tailwind.config = {
   .sp-detail-col{ display:grid; grid-template-columns:1fr 300px;  gap:2rem;    align-items:start }
   .sp-grid-3    { display:grid; grid-template-columns:repeat(3,1fr); gap:1.25rem }
   .sp-grid-2    { display:grid; grid-template-columns:1fr 1fr;    gap:1rem    }
+
+  /* ── SKELETON LOADERS ── */
+  @keyframes sp-shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+  .sp-skel { background:linear-gradient(90deg,#f0f2f6 25%,#e6e9f0 50%,#f0f2f6 75%); background-size:200% 100%; animation:sp-shimmer 1.6s infinite; border-radius:8px; }
+  .sp-skel-card { background:white; border-radius:16px; border:1px solid rgba(58,75,130,.08); padding:1.5rem; display:flex; flex-direction:column; gap:.875rem; }
+  .sp-skel-line { height:.875rem; border-radius:6px; }
+  .sp-skel-pill { height:1.5rem; border-radius:100px; }
+  .sp-skel-btn  { height:2.375rem; border-radius:8px; margin-top:auto; }
   .sp-footer-4  { display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr; gap:2.5rem; margin-bottom:2.5rem; padding-bottom:2rem; border-bottom:1px solid rgba(255,255,255,.07) }
   .sp-hide-m    {}
   .sp-show-m    { display:none }
@@ -1370,7 +1378,8 @@ function spToggleSpaceFilter(key,val,checked){
 function spRerenderSpaceGrid(){
   var g=document.getElementById('sp-sgrid');if(!g)return;
   var ns=S.filteredSpaces;
-  g.innerHTML=ns.length?ns.map(spaceCard).join(''):'<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#6B7280;font-size:.9rem">Aucun espace ne correspond à vos filtres.</div>';
+  var hasF=S.spaceFilters.types.length||S.spaceFilters.villes.length||S.spaceFilters.search;
+  g.innerHTML=ns.length?ns.map(spaceCard).join(''):(hasF?spEmptyState('🔍','Aucun espace trouvé','Modifiez vos filtres pour élargir la recherche.',null):spEmptyState('🏠','Pas encore d\'espaces','Soyez le premier à proposer un espace aux associations.',['proposer-espace','Proposer un espace →']));
   var cnt=document.getElementById('sp-scount');
   if(cnt)cnt.innerHTML='<strong style="color:#151C33">'+ns.length+'</strong> espace'+(ns.length>1?'s ':' ')+'disponible'+(ns.length>1?'s':'');
 }
@@ -1393,7 +1402,13 @@ function pgBesoins(){
     villes.map(function(v){return '<label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#4A5060;margin-bottom:.4rem;cursor:pointer"><input type="checkbox" value="'+v+'" '+fChk('villes',v)+' onchange="spToggleFilter(\'villes\',\''+v+'\',this.checked)" style="accent-color:#687FD2;width:15px;height:15px">'+v+'</label>';}).join('')+'</div>'+
     '<button onclick="S.filters={types:[],freqs:[],villes:[],search:\'\'};go(\'besoins\')" style="width:100%;padding:.5rem;background:transparent;color:#6B7280;border:none;font-size:.78rem;cursor:pointer;margin-top:.25rem">Réinitialiser les filtres</button>';
 
-  var gridHTML=ns.length?ns.map(needCard).join(''):'<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#6B7280;font-size:.9rem">Aucun besoin ne correspond à vos filtres.</div>';
+  var hasActiveFilters=S.filters.types.length||S.filters.freqs.length||S.filters.villes.length||S.filters.search;
+  var gridHTML=!S._needsLoaded?
+    spSkeletonCards(6,false):
+    (ns.length?ns.map(needCard).join(''):
+      hasActiveFilters?
+        spEmptyState('🔍','Aucun résultat','Essayez d\'élargir vos critères ou de réinitialiser les filtres.',null):
+        spEmptyState('📋','Pas encore de besoins publiés','Soyez la première association à publier votre besoin d\'espace !',['poster-besoin','Publier un besoin →']));
 
   return spNav()+
     '<div style="min-height:100vh;background:#F8F9FC">'+
@@ -2731,8 +2746,8 @@ function pgEspaces(){
 
   var activeCount=ns.length;
   var gridContent=!S._spacesLoaded?
-    '<div style="grid-column:1/-1;text-align:center;padding:4rem;color:#9CA3AF"><div style="font-size:2rem;margin-bottom:.75rem">⏳</div>Chargement des espaces…</div>':
-    (ns.length?ns.map(spaceCard).join(''):'<div style="grid-column:1/-1;text-align:center;padding:4rem"><div style="font-size:2.5rem;margin-bottom:1rem">🏠</div><p style="color:#6B7280;font-size:.9rem;margin-bottom:1.5rem">Aucun espace disponible pour le moment.<br>Soyez le premier à proposer le vôtre !</p><a onclick="go(\'proposer-espace\')" style="cursor:pointer;display:inline-block;background:#3A4B82;color:white;padding:.65rem 1.5rem;border-radius:10px;font-family:Space Grotesk,sans-serif;font-size:.84rem;font-weight:700;text-decoration:none">Proposer un espace →</a></div>');
+    spSkeletonCards(6,false):
+    (ns.length?ns.map(spaceCard).join(''):spEmptyState('🏠','Pas encore d\'espaces','Aucun espace disponible pour le moment. Soyez le premier à proposer le vôtre !',['proposer-espace','Proposer un espace →']));
 
   return spNav()+
   '<div style="min-height:100vh;background:#F8F9FC">'+
@@ -3840,10 +3855,43 @@ function spToggleFilter(key,val,checked){
 function spRerenderGrid(){
   var g=document.getElementById('sp-grid');if(!g)return;
   var ns=S.filteredNeeds;
-  g.innerHTML=ns.length?ns.map(needCard).join(''):'<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#6B7280;font-size:.9rem">Aucun besoin ne correspond à vos filtres.</div>';
+  var hasF=S.filters.types.length||S.filters.freqs.length||S.filters.villes.length||S.filters.search;
+  g.innerHTML=ns.length?ns.map(needCard).join(''):(hasF?spEmptyState('🔍','Aucun résultat','Essayez d\'élargir vos critères ou de réinitialiser les filtres.',null):spEmptyState('📋','Pas encore de besoins','Publiez votre premier besoin pour apparaître ici.',['poster-besoin','Publier un besoin →']));
   var countEl=document.getElementById('sp-count');
   if(countEl)countEl.innerHTML='<strong style="color:#151C33">'+ns.length+'</strong> besoin'+(ns.length>1?'s':'')+' trouvé'+(ns.length>1?'s':'');
 }
+
+// ── SKELETON HELPERS ──────────────────────────────
+function spSkeletonCards(n, withPhoto){
+  n=n||6; withPhoto=withPhoto||false;
+  var card=
+    '<div class="sp-skel-card">'+
+      (withPhoto?'<div class="sp-skel" style="height:140px;border-radius:12px;margin:-1.5rem -1.5rem .75rem;width:calc(100% + 3rem)"></div>':'')+
+      '<div class="sp-skel sp-skel-pill" style="width:42%"></div>'+
+      '<div>'+
+        '<div class="sp-skel sp-skel-line" style="width:85%;margin-bottom:.5rem"></div>'+
+        '<div class="sp-skel sp-skel-line" style="width:60%;height:.75rem"></div>'+
+      '</div>'+
+      '<div style="display:flex;gap:.5rem">'+
+        '<div class="sp-skel sp-skel-pill" style="width:5.5rem"></div>'+
+        '<div class="sp-skel sp-skel-pill" style="width:5.5rem"></div>'+
+      '</div>'+
+      '<div class="sp-skel sp-skel-btn"></div>'+
+    '</div>';
+  var out='';
+  for(var i=0;i<n;i++)out+=card;
+  return out;
+}
+
+function spEmptyState(icon,title,desc,cta){
+  return '<div style="grid-column:1/-1;text-align:center;padding:4rem 2rem">'+
+    '<div style="font-size:2.5rem;margin-bottom:1rem">'+icon+'</div>'+
+    '<p style="font-family:Space Grotesk,sans-serif;font-size:1rem;font-weight:700;color:#151C33;margin-bottom:.5rem">'+title+'</p>'+
+    '<p style="color:#6B7280;font-size:.875rem;max-width:320px;margin:0 auto '+(cta?'1.5rem':'0')+'">'+desc+'</p>'+
+    (cta?'<a onclick="go(\''+cta[0]+'\')" style="cursor:pointer;display:inline-block;background:#3A4B82;color:white;padding:.65rem 1.5rem;border-radius:10px;font-family:Space Grotesk,sans-serif;font-size:.84rem;font-weight:700;text-decoration:none">'+cta[1]+'</a>':'')+
+  '</div>';
+}
+// ─────────────────────────────────────────────────
 
 // ── STATS DYNAMIQUES ──────────────────────────────
 function spLoadStats(){
