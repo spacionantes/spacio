@@ -96,6 +96,7 @@ tailwind.config = {
     --spacio-blue-light: #687FD2;
     --spacio-blue-mid:   #3A4B82;
     --spacio-blue-dark:  #151C33;
+    --spacio-gold:       #E8A020;
     --spacio-bg-white:   #FFFFFF;
     --spacio-bg-light:   #F8F9FC;
     --spacio-border:     #EAECEF;
@@ -135,7 +136,7 @@ tailwind.config = {
   /* Textes hero sur fond sombre */
   .hero .hero-tag { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.92); border: 1px solid rgba(255,255,255,0.18); }
   .hero .hero-headline { color: #ffffff; }
-  .hero .hero-headline em { color: #a5b4fc; }
+  .hero .hero-headline em { color: var(--spacio-gold); }
   .hero .hero-sub { color: rgba(255,255,255,0.80); border-left-color: rgba(165,180,252,0.65); }
   .hero .btn-primary { background: #ffffff; color: var(--spacio-blue-dark); }
   .hero .btn-primary:hover { background: #f0f4ff; transform: translateY(-1px); box-shadow: 0 4px 18px rgba(0,0,0,0.28); }
@@ -150,7 +151,7 @@ tailwind.config = {
   h1 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(2rem, 3.8vw, 3.25rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.025em; color: var(--dark); margin-bottom: 1.25rem; }
   h1 em { font-style: italic; color: var(--spacio-blue-light); }
   .hero-headline { font-family: 'DM Serif Display', serif; font-size: clamp(2.75rem, 6vw, 5.25rem); font-weight: 400; line-height: 1.08; letter-spacing: -0.01em; color: var(--spacio-blue-dark); margin-bottom: 2rem; max-width: 860px; }
-  .hero-headline em { font-style: italic; color: var(--spacio-blue-light); font-weight: 400; }
+  .hero-headline em { font-style: italic; color: var(--spacio-gold); font-weight: 400; }
   /* Sous-titre avec trait gauche */
   .hero-sub { font-size: 1.05rem; color: #4A5060; line-height: 1.75; margin-bottom: 2.5rem; font-weight: 400; max-width: 460px; padding-left: 1.125rem; border-left: 2.5px solid var(--spacio-blue-light); }
   .hero-btns { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
@@ -226,11 +227,11 @@ tailwind.config = {
   /* IMPACT — Bloc E */
   #impact { background: var(--spacio-blue-dark); padding: 6rem 0; }
   .metrics-block { border: 1px solid rgba(255,255,255,.07); border-radius: 20px; padding: 3.5rem; }
-  .metrics-block hr { border: none; border-top: 1px solid rgba(255,255,255,.07); margin: 2rem 0 0; }
+  .metrics-block hr { border: none; height: 1px; background: linear-gradient(90deg, rgba(232,160,32,.35), rgba(232,160,32,.08) 60%, transparent); margin: 2rem 0 0; }
   .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
   .metric-item { text-align: center; padding: 2.5rem 1.5rem; border-right: 1px solid rgba(255,255,255,.07); }
   .metric-item:last-child { border-right: none; }
-  .metric-num { font-family: 'Space Grotesk', sans-serif; font-size: clamp(2.75rem, 4.5vw, 4.25rem); font-weight: 700; color: var(--spacio-blue-light); line-height: 1; margin-bottom: 0.625rem; }
+  .metric-num { font-family: 'Space Grotesk', sans-serif; font-size: clamp(2.75rem, 4.5vw, 4.25rem); font-weight: 700; color: var(--spacio-gold); line-height: 1; margin-bottom: 0.625rem; }
   .metric-label { font-size: 0.875rem; color: rgba(255,255,255,.45); line-height: 1.4; }
 
   /* SPACE TYPES */
@@ -746,7 +747,7 @@ tailwind.config = {
     <div class="metrics-block fade-up">
       <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1rem">
         <div>
-          <div class="section-tag" style="background:rgba(104,127,210,.15);color:var(--spacio-blue-light)">Notre impact</div>
+          <div class="section-tag" style="background:rgba(232,160,32,.15);color:var(--spacio-gold)">Notre impact</div>
           <h2 style="color:white;margin-top:.5rem">Spacio en chiffres</h2>
         </div>
         <p style="font-size:.9rem;color:rgba(255,255,255,.4);max-width:280px;text-align:right;line-height:1.5">Depuis notre lancement, des dizaines de mises en relation réussies partout en France.</p>
