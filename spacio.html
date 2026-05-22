@@ -48,12 +48,9 @@ function spAfterAuth(){
 }
 
 // Source unique de vérité : onAuthStateChange gère INITIAL_SESSION, SIGNED_IN, TOKEN_REFRESHED, SIGNED_OUT
-// getSession() est retiré — il peut retourner un token expiré du localStorage avant que Supabase le valide
 db.auth.onAuthStateChange(function(event, session){
   if(session && session.user){
     var u = session.user;
-    // Évite un double chargement si on a déjà cet utilisateur
-    if(S.user && S.user.id === u.id && S.authReady){ spRefreshNav(); return; }
     db.from('profiles').select('*').eq('id', u.id).single().then(function(p){
       if(p.data){
         S.user = { id: u.id, name: p.data.name, type: p.data.type, email: u.email, profile: p.data };
@@ -1856,6 +1853,7 @@ function spLogin(){
 
 // ── PAGE : LOGIN ──────────────────────────────────
 function pgLogin(){
+  if(S.user){ go('dashboard'); return ''; }
   return spNav()+
     '<div style="min-height:100vh;padding:5rem 1.5rem 3rem;display:flex;align-items:center;justify-content:center;background:#F8F9FC;position:relative">'+
       '<div style="position:absolute;inset:0;background-image:radial-gradient(circle,rgba(58,75,130,.06) 1px,transparent 1px);background-size:28px 28px;pointer-events:none"></div>'+
@@ -1903,6 +1901,7 @@ function spForgotPassword(){
 }
 
 function pgInscription(type){
+  if(S.user){ go('dashboard'); return ''; }
   if(type&&!S.inscType)S.inscType=type;
   var step=S.inscStep||1;
 
