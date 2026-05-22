@@ -1224,17 +1224,10 @@ const TYPE_LABELS={
   cuisine:'Cuisine partagée',autre:'Autre espace'
 };
 
-// ── OPTIMISATION IMAGES SUPABASE ──────────────────
-// Convertit une URL Supabase Storage en URL transformée (WebP, redimensionnée, compressée)
-// w = largeur max en px, q = qualité 1-100 (défaut 75)
-function spImgOpt(url, w, q){
-  if(!url) return '';
-  w = w || 1200; q = q || 75;
-  // Détecte URL Supabase Storage : /storage/v1/object/public/...
-  var m = url.match(/^(https:\/\/[^/]+\.supabase\.co)\/storage\/v1\/object\/public\/(.+)$/);
-  if(m) return m[1]+'/storage/v1/render/image/public/'+m[2]+'?width='+w+'&quality='+q+'&format=webp';
-  return url; // URL externe → inchangée
-}
+// ── OPTIMISATION IMAGES ────────────────────────────
+// Supabase image transforms (/render/image/) nécessitent un plan Pro → désactivé.
+// Le lazy loading (loading="lazy") est appliqué sur toutes les images secondaires.
+function spImgOpt(url){ return url || ''; }
 
 function spLogoSVG(s,dark){
   s=s||36;
