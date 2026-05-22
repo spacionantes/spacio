@@ -28,6 +28,17 @@ const SUPA_URL  = 'https://mgsbcnhpvyjosqcjsyye.supabase.co';
 const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2Jjbmhwdnlqb3NxY2pzeXllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMjQzMTIsImV4cCI6MjA5NDkwMDMxMn0.xIlNgz5Iv2ROzHZRtsGIlOAITPa3Fw7MOiJTgZaDFYk';
 const db = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 
+// Pages dont les boutons dépendent de l'état auth → re-render après restore session
+var SP_AUTH_PAGES = ['besoin','espace','besoins','espaces','dashboard','proposer-espace','poster-besoin','conversation'];
+
+function spAfterAuth(){
+  spRefreshNav();
+  // Re-render la page courante si ses boutons dépendent de l'état user
+  if(SP_AUTH_PAGES.indexOf(S.page) > -1){
+    go(S.page, S.params);
+  }
+}
+
 // Restaurer la session au chargement
 db.auth.getSession().then(function(r){
   if(r.data.session){
@@ -35,8 +46,10 @@ db.auth.getSession().then(function(r){
     db.from('profiles').select('*').eq('id', u.id).single().then(function(p){
       if(p.data){
         S.user = { id: u.id, name: p.data.name, type: p.data.type, email: u.email, profile: p.data };
-        spRefreshNav();
+      } else {
+        S.user = { id: u.id, name: u.email.split('@')[0], type: 'asso', email: u.email, profile: null };
       }
+      spAfterAuth();
     });
   }
 });
@@ -49,8 +62,10 @@ db.auth.onAuthStateChange(function(event, session){
     db.from('profiles').select('*').eq('id', u.id).single().then(function(p){
       if(p.data){
         S.user = { id: u.id, name: p.data.name, type: p.data.type, email: u.email, profile: p.data };
-        spRefreshNav();
+      } else {
+        S.user = { id: u.id, name: u.email.split('@')[0], type: 'asso', email: u.email, profile: null };
       }
+      spAfterAuth();
     });
   }
 });
