@@ -17,6 +17,9 @@
 <link rel="canonical" href="https://spacionantes.github.io/spacio/spacio.html">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" crossorigin="">
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -44,10 +47,13 @@ function spAfterAuth(){
   }
 }
 
-// Restaurer la session au chargement
-db.auth.getSession().then(function(r){
-  if(r.data.session){
-    var u = r.data.session.user;
+// Source unique de vérité : onAuthStateChange gère INITIAL_SESSION, SIGNED_IN, TOKEN_REFRESHED, SIGNED_OUT
+// getSession() est retiré — il peut retourner un token expiré du localStorage avant que Supabase le valide
+db.auth.onAuthStateChange(function(event, session){
+  if(session && session.user){
+    var u = session.user;
+    // Évite un double chargement si on a déjà cet utilisateur
+    if(S.user && S.user.id === u.id && S.authReady){ spRefreshNav(); return; }
     db.from('profiles').select('*').eq('id', u.id).single().then(function(p){
       if(p.data){
         S.user = { id: u.id, name: p.data.name, type: p.data.type, email: u.email, profile: p.data };
@@ -58,25 +64,10 @@ db.auth.getSession().then(function(r){
       spAfterAuth();
     });
   } else {
-    // Pas de session — auth vérifiée, on peut maintenant rediriger si besoin
+    // SIGNED_OUT ou INITIAL_SESSION sans session (pas connecté)
+    S.user = null;
     S.authReady = true;
     spAfterAuth();
-  }
-});
-
-// Écouter les changements d'auth (login / logout)
-db.auth.onAuthStateChange(function(event, session){
-  if(event === 'SIGNED_OUT'){ S.user = null; spRefreshNav(); }
-  if(event === 'SIGNED_IN' && session){
-    var u = session.user;
-    db.from('profiles').select('*').eq('id', u.id).single().then(function(p){
-      if(p.data){
-        S.user = { id: u.id, name: p.data.name, type: p.data.type, email: u.email, profile: p.data };
-      } else {
-        S.user = { id: u.id, name: u.email.split('@')[0], type: 'asso', email: u.email, profile: null };
-      }
-      spAfterAuth();
-    });
   }
 });
 </script>
@@ -194,7 +185,8 @@ tailwind.config = {
   h2 span { color: var(--primary); }
 
   /* NEEDS SECTION */
-  .needs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 1.25rem; margin-top: 3rem; }
+  .needs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.25rem; margin-top: 3rem; }
+  .needs-grid.no-top-margin { margin-top: 0; }
   .need-card { background: white; border-radius: 16px; border: 1px solid rgba(58,75,130,0.1); padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; transition: all 0.25s ease; position: relative; overflow: hidden; }
   .need-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--primary), var(--light)); transform: scaleX(0); transform-origin: left; transition: transform 0.3s ease; }
   .need-card:hover { box-shadow: 0 8px 30px rgba(58,75,130,0.15); transform: translateY(-3px); border-color: rgba(58,75,130,0.25); }
@@ -1446,10 +1438,13 @@ function spaceCard(sp){
   var hote=sp.profiles?sp.profiles.name:'Hôte';
   var photos=Array.isArray(sp.photos)?sp.photos:[];
   var cover=photos.length?photos[0]:null;
-  return '<div onclick="go(\'espace\',\''+sp.id+'\')" class="need-card" style="cursor:pointer;'+(cover?'padding-top:0':'')+'">'+
+  return '<div onclick="go(\'espace\',\''+sp.id+'\')" class="need-card" style="cursor:pointer;'+(cover?'padding:0;':'')+'">'+
     (cover?
-      '<img src="'+cover+'" alt="'+lbl+'" style="display:block;width:calc(100% + 3rem);margin:-0px -1.5rem 1rem;height:150px;object-fit:cover;border-radius:14px 14px 0 0">':
-      '')+
+      '<div style="width:100%;height:160px;overflow:hidden;border-radius:14px 14px 0 0;margin-bottom:1rem">'+
+        '<img src="'+cover+'" alt="'+lbl+'" style="width:100%;height:100%;object-fit:cover;display:block">'+
+      '</div>'+
+      '<div style="padding:0 1.5rem 1.5rem;display:flex;flex-direction:column;gap:1rem;flex:1">':
+      '<div style="display:contents">')+
     '<span class="badge" style="background:'+bg+';color:'+col+'">'+lbl+'</span>'+
     '<div>'+
       '<div class="need-card-title">'+(sp.title||lbl)+'</div>'+
@@ -1460,6 +1455,7 @@ function spaceCard(sp){
       '<span class="tag">💶 '+(sp.tarif||'À discuter')+'</span>'+
     '</div>'+
     '<button onclick="event.stopPropagation();go(\'espace\',\''+sp.id+'\')" class="need-card-cta" style="background:#151C33">Voir l\'espace →</button>'+
+    '</div>'+
   '</div>';
 }
 
@@ -2959,7 +2955,7 @@ function pgEspaces(){
             '<a onclick="go(\'proposer-espace\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1rem;background:#3A4B82;color:white;border-radius:9px;font-family:Space Grotesk,sans-serif;font-size:.79rem;font-weight:700;text-decoration:none;transition:background .2s" onmouseover="this.style.background=\'#253060\'" onmouseout="this.style.background=\'#3A4B82\'">+ Proposer le mien</a>'+
           '</div>'+
         '</div>'+
-        '<div id="sp-sgrid" class="needs-grid" style="'+(S.spacesViewMode==='map'?'display:none':'')+'">'+gridContent+'</div>'+
+        '<div id="sp-sgrid" class="needs-grid no-top-margin" style="'+(S.spacesViewMode==='map'?'display:none':'')+'">'+gridContent+'</div>'+
         '<div id="sp-map-wrap" style="border-radius:16px;overflow:hidden;border:1px solid rgba(58,75,130,.1);'+(S.spacesViewMode!=='map'?'display:none':'')+'">'+
           '<div id="sp-map" style="height:520px;width:100%"></div>'+
         '</div>'+
@@ -2994,39 +2990,60 @@ var _spMap=null;
 function spInitSpaceMap(){
   var container=document.getElementById('sp-map');
   if(!container||typeof L==='undefined')return;
-  // Reset map if already initialized on this container
   if(_spMap){_spMap.remove();_spMap=null;}
-  _spMap=L.map('sp-map',{scrollWheelZoom:false}).setView([46.5,2.3],5);
+  _spMap=L.map('sp-map',{scrollWheelZoom:true}).setView([46.5,2.3],5);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
     attribution:'© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
     maxZoom:18
   }).addTo(_spMap);
+
+  // Icône individuelle
   var spaceIcon=L.divIcon({
-    html:'<div style="width:32px;height:32px;background:#3A4B82;border-radius:50% 50% 50% 4px;transform:rotate(45deg);border:2px solid white;box-shadow:0 2px 6px rgba(21,28,51,.3)"></div>',
-    iconSize:[32,32],iconAnchor:[16,28],popupAnchor:[0,-30],className:''
+    html:'<div style="width:28px;height:28px;background:#3A4B82;border-radius:50% 50% 50% 4px;transform:rotate(45deg);border:2.5px solid white;box-shadow:0 2px 8px rgba(21,28,51,.4)"></div>',
+    iconSize:[28,28],iconAnchor:[14,24],popupAnchor:[0,-26],className:''
   });
+
+  // Cluster group — Spacio design
+  var clusterGroup = typeof L.markerClusterGroup !== 'undefined'
+    ? L.markerClusterGroup({
+        maxClusterRadius: 48,
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false,
+        iconCreateFunction: function(cluster){
+          var n=cluster.getChildCount();
+          return L.divIcon({
+            html:'<div style="width:40px;height:40px;background:#3A4B82;border:3px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(21,28,51,.35);font-family:Space Grotesk,sans-serif;font-size:.85rem;font-weight:700;color:white">'+n+'</div>',
+            iconSize:[40,40],className:''
+          });
+        }
+      })
+    : null; // fallback si plugin non chargé
+
   var bounds=[];
   S.filteredSpaces.forEach(function(sp){
     if(!sp.lat||!sp.lon)return;
     var photos=Array.isArray(sp.photos)?sp.photos:[];
-    var cover=photos.length?'<img src="'+photos[0]+'" style="width:100%;height:100px;object-fit:cover;border-radius:8px;margin-bottom:.5rem">':'';
+    var cover=photos.length?'<img src="'+photos[0]+'" style="width:100%;height:110px;object-fit:cover;border-radius:9px;margin-bottom:.6rem">':'';
     var lbl=TYPE_LABELS[sp.space_type]||sp.space_type;
     var popup=
-      '<div style="font-family:Plus Jakarta Sans,sans-serif;min-width:180px">'+
+      '<div style="font-family:Plus Jakarta Sans,sans-serif;min-width:190px;max-width:210px">'+
         cover+
-        '<div style="font-size:.75rem;font-weight:700;color:#687FD2;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.2rem">'+lbl+'</div>'+
-        '<div style="font-size:.9rem;font-weight:700;color:#151C33;margin-bottom:.25rem">'+(sp.title||lbl)+'</div>'+
-        '<div style="font-size:.78rem;color:#6B7280;margin-bottom:.625rem">'+(sp.ville||'')+(sp.quartier?' · '+sp.quartier:'')+'</div>'+
-        '<a onclick="go(\'espace\',\''+sp.id+'\')" style="display:inline-block;background:#3A4B82;color:white;padding:.35rem .875rem;border-radius:7px;font-size:.78rem;font-weight:700;cursor:pointer;text-decoration:none">Voir →</a>'+
+        '<div style="font-size:.7rem;font-weight:700;color:#687FD2;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.2rem">'+lbl+'</div>'+
+        '<div style="font-size:.9rem;font-weight:700;color:#151C33;line-height:1.25;margin-bottom:.2rem">'+(sp.title||lbl)+'</div>'+
+        '<div style="font-size:.75rem;color:#6B7280;margin-bottom:.625rem">'+(sp.ville||'')+(sp.quartier?' · '+sp.quartier:'')+'</div>'+
+        '<a onclick="go(\'espace\',\''+sp.id+'\')" style="display:block;text-align:center;background:#3A4B82;color:white;padding:.4rem .875rem;border-radius:8px;font-size:.78rem;font-weight:700;cursor:pointer;text-decoration:none;transition:background .15s" onmouseover="this.style.background=\'#253060\'" onmouseout="this.style.background=\'#3A4B82\'">Voir l\'espace →</a>'+
       '</div>';
-    var marker=L.marker([sp.lat,sp.lon],{icon:spaceIcon}).addTo(_spMap);
-    marker.bindPopup(popup);
+    var marker=L.marker([sp.lat,sp.lon],{icon:spaceIcon});
+    marker.bindPopup(popup,{maxWidth:220});
+    if(clusterGroup) clusterGroup.addLayer(marker);
+    else marker.addTo(_spMap);
     bounds.push([sp.lat,sp.lon]);
   });
+  if(clusterGroup) _spMap.addLayer(clusterGroup);
+
   if(bounds.length>0){
-    try{_spMap.fitBounds(bounds,{padding:[40,40],maxZoom:13});}catch(e){}
-  }
-  if(bounds.length===0){
+    try{_spMap.fitBounds(bounds,{padding:[50,50],maxZoom:14});}catch(e){}
+  } else {
     var noDataDiv=document.createElement('div');
     noDataDiv.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:1rem 1.5rem;border-radius:12px;text-align:center;font-family:Plus Jakarta Sans,sans-serif;font-size:.85rem;color:#6B7280;z-index:1000;box-shadow:0 2px 12px rgba(0,0,0,.1)';
     noDataDiv.innerHTML='📍 Les espaces apparaîtront ici<br>une fois géolocalisés.';
