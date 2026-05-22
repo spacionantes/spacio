@@ -122,33 +122,48 @@ tailwind.config = {
   /* ── CURSEUR CUSTOM ── */
   #sp-cursor-dot {
     position: fixed; top: 0; left: 0; z-index: 99999; pointer-events: none;
-    width: 8px; height: 8px; border-radius: 50%;
-    background: #FF8C2A;
-    box-shadow: 0 0 0 2px rgba(255,140,42,0.35);
+    width: 6px; height: 6px;
+    background: #151C33;
+    border-radius: 50%;
     transform: translate(-50%,-50%);
-    transition: width .12s, height .12s, background .12s;
     will-change: transform;
+    mix-blend-mode: difference;
   }
+  /* Croix (4 branches) autour du dot */
+  #sp-cursor-dot::before,
+  #sp-cursor-dot::after {
+    content: ''; position: absolute; background: #151C33;
+    border-radius: 2px;
+  }
+  #sp-cursor-dot::before { width: 1.5px; height: 10px; top: 50%; left: 50%; transform: translate(-50%,-50%) translateY(-50%) scaleY(0); transform-origin: center;
+    transition: transform .15s cubic-bezier(.34,1.56,.64,1); }
+  #sp-cursor-dot::after  { width: 10px; height: 1.5px; top: 50%; left: 50%; transform: translate(-50%,-50%) translateX(-50%) scaleX(0); transform-origin: center;
+    transition: transform .15s cubic-bezier(.34,1.56,.64,1); }
+
+  /* Losange suiveur */
   #sp-cursor-ring {
     position: fixed; top: 0; left: 0; z-index: 99998; pointer-events: none;
-    width: 34px; height: 34px; border-radius: 50%;
-    border: 2px solid rgba(255,140,42,0.55);
-    transform: translate(-50%,-50%);
+    width: 24px; height: 24px;
+    border: 2px solid #151C33;
+    border-radius: 4px;
+    transform: translate(-50%,-50%) rotate(45deg);
     will-change: transform;
-    transition: width .18s, height .18s, border-color .18s, opacity .18s;
+    transition: width .2s, height .2s, border-radius .2s, border-color .2s, opacity .2s;
+    mix-blend-mode: difference;
   }
-  body.sp-cursor-click #sp-cursor-dot {
-    width: 12px; height: 12px;
-    background: #FF6A00;
-    box-shadow: 0 0 0 5px rgba(255,106,0,0.18);
-  }
-  body.sp-cursor-hover #sp-cursor-dot {
-    width: 6px; height: 6px; background: #FF6A00;
-  }
+
+  /* Hover : croix apparaît, losange se redresse + s'agrandit */
+  body.sp-cursor-hover #sp-cursor-dot::before { transform: translate(-50%,-50%) translateY(0) scaleY(1); }
+  body.sp-cursor-hover #sp-cursor-dot::after  { transform: translate(-50%,-50%) translateX(0) scaleX(1); }
   body.sp-cursor-hover #sp-cursor-ring {
-    width: 42px; height: 42px;
-    border-color: rgba(255,106,0,0.7);
-    background: rgba(255,140,42,0.05);
+    width: 36px; height: 36px; border-radius: 8px;
+    border-color: #3A4B82;
+  }
+
+  /* Click : flash scale */
+  body.sp-cursor-click #sp-cursor-ring {
+    width: 18px; height: 18px; border-radius: 3px;
+    border-color: #687FD2; opacity: .6;
   }
 
   /* NAV */
@@ -4248,11 +4263,14 @@ setTimeout(function(){
     dot.style.transform = 'translate(calc('+mx+'px - 50%), calc('+my+'px - 50%))';
   });
 
-  // Ring suit avec un léger lag (lerp)
+  // Ring suit avec un léger lag (lerp) — conserve rotate(45deg) via CSS, le JS gère translate uniquement
+  var ringRot = 45; // degrés, animé vers 0 en hover
   function loop(){
-    rx += (mx - rx) * 0.13;
-    ry += (my - ry) * 0.13;
-    ring.style.transform = 'translate(calc('+rx.toFixed(2)+'px - 50%), calc('+ry.toFixed(2)+'px - 50%))';
+    rx += (mx - rx) * 0.11;
+    ry += (my - ry) * 0.11;
+    var isHover = document.body.classList.contains('sp-cursor-hover');
+    ringRot += (( isHover ? 0 : 45) - ringRot) * 0.12;
+    ring.style.transform = 'translate(calc('+rx.toFixed(2)+'px - 50%), calc('+ry.toFixed(2)+'px - 50%)) rotate('+ringRot.toFixed(1)+'deg)';
     raf = requestAnimationFrame(loop);
   }
   loop();
