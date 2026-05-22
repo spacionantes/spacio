@@ -1000,6 +1000,7 @@ function spLoadNeeds(callback){
         S._dbNeeds = r.data.map(function(n){
           return {
             id:       n.id,
+            user_id:  n.user_id,
             type:     n.space_type,
             typeLabel:TYPE_LABELS[n.space_type]||n.space_type,
             org:      n.profiles ? n.profiles.name : 'Association',
