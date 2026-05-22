@@ -530,7 +530,7 @@ tailwind.config = {
 <nav id="navbar">
   <div class="nav-inner">
     <a href="#" class="logo-wrap">
-      <img src="logo-spacio.png" style="height:52px;width:auto">
+      <img src="logo-spacio.png" style="height:34px;width:auto">
     </a>
     <div class="nav-links sp-nav-groups">
       <div class="sp-drop">
@@ -1281,8 +1281,12 @@ const TYPE_LABELS={
   cuisine:'Cuisine partagée',autre:'Autre espace'
 };
 
-function spLogoSVG(s){
+function spLogoSVG(s,dark){
   s=s||36;
+  if(dark){
+    // Fond sombre → wordmark texte blanc (évite le fond blanc du PNG sur dark bg)
+    return '<span style="font-family:Space Grotesk,sans-serif;font-size:'+(s*0.55).toFixed(0)+'px;font-weight:800;color:white;letter-spacing:-.03em">Spacio</span>';
+  }
   return '<img src="logo-spacio.png" style="height:'+s+'px;width:auto;display:block">';
 }
 
@@ -1295,7 +1299,7 @@ function spNav(){
   return '<nav style="position:sticky;top:0;z-index:1000;background:rgba(255,255,255,.97);backdrop-filter:blur(14px);border-bottom:1px solid #EAECEF;padding:.8rem 0">'+
     '<div style="max-width:1200px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem">'+
       '<a onclick="go(\'home\')" style="display:flex;align-items:center;gap:.55rem;cursor:pointer;text-decoration:none">'+
-        spLogoSVG(44)+
+        spLogoSVG(34)+
       '</a>'+
       '<div class="sp-nav-links-d sp-nav-groups">'+
         '<div class="sp-drop">'+
@@ -1434,7 +1438,7 @@ function spFooter(){
     '<div style="max-width:1200px;margin:0 auto;padding:0 1.5rem">'+
       '<div class="sp-footer-4">'+
         '<div>'+
-          '<a onclick="go(\'home\')" style="display:inline-flex;align-items:center;gap:.55rem;cursor:pointer;text-decoration:none;margin-bottom:.875rem">'+spLogoSVG(40)+'</a>'+
+          '<a onclick="go(\'home\')" style="display:inline-flex;align-items:center;gap:.55rem;cursor:pointer;text-decoration:none;margin-bottom:.875rem">'+spLogoSVG(40,true)+'</a>'+
           '<p style="font-size:.8rem;color:rgba(255,255,255,.35);line-height:1.65;max-width:195px;font-family:Plus Jakarta Sans,sans-serif">Mettre en relation associations et espaces disponibles, gratuitement, partout en France.</p>'+
         '</div>'+
         '<div>'+
@@ -1909,7 +1913,7 @@ function pgLogin(){
       '<div style="background:white;border-radius:24px;padding:2.5rem;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(21,28,51,.09);border:1px solid var(--spacio-border);position:relative;z-index:1">'+
         '<div style="text-align:center;margin-bottom:2rem">'+
           '<div style="display:flex;align-items:center;justify-content:center;gap:.5rem;margin-bottom:1rem">'+
-            spLogoSVG(48)+
+            spLogoSVG(44)+
           '</div>'+
           '<h2 style="font-family:Space Grotesk,sans-serif;font-size:1.5rem;font-weight:800;color:#151C33;margin-bottom:.25rem">Bon retour !</h2>'+
           '<p style="font-size:.84rem;color:#6B7280">Connectez-vous à votre compte Spacio</p>'+
@@ -2022,7 +2026,7 @@ function pgInscription(type){
         // Logo + titre
         '<div style="text-align:center;margin-bottom:1.75rem">'+
           '<div style="display:flex;align-items:center;justify-content:center;gap:.5rem;margin-bottom:1rem">'+
-            spLogoSVG(48)+
+            spLogoSVG(44)+
           '</div>'+
           '<h2 style="font-family:Space Grotesk,sans-serif;font-size:1.5rem;font-weight:800;color:#151C33;margin-bottom:.25rem">Rejoindre Spacio</h2>'+
           '<p style="font-size:.84rem;color:#6B7280">Inscription gratuite, sans engagement</p>'+
