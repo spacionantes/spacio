@@ -33,6 +33,11 @@ var SP_AUTH_PAGES = ['besoin','espace','besoins','espaces','dashboard','proposer
 
 function spAfterAuth(){
   spRefreshNav();
+  // Si connecté et bloqué sur login/inscription → dashboard
+  if(S.user && (S.page === 'login' || S.page === 'inscription')){
+    go('dashboard');
+    return;
+  }
   // Re-render la page courante si ses boutons dépendent de l'état user
   if(SP_AUTH_PAGES.indexOf(S.page) > -1){
     go(S.page, S.params);
@@ -49,8 +54,13 @@ db.auth.getSession().then(function(r){
       } else {
         S.user = { id: u.id, name: u.email.split('@')[0], type: 'asso', email: u.email, profile: null };
       }
+      S.authReady = true;
       spAfterAuth();
     });
+  } else {
+    // Pas de session — auth vérifiée, on peut maintenant rediriger si besoin
+    S.authReady = true;
+    spAfterAuth();
   }
 });
 
@@ -961,7 +971,7 @@ const NEEDS=[
 
 // ── STATE ─────────────────────────────────────────
 const S={
-  page:'home',params:{},user:null,pendingEmail:null,
+  page:'home',params:{},user:null,authReady:false,pendingEmail:null,
   filters:{types:[],freqs:[],villes:[],search:''},
   _dbNeeds: [],
   _needsLoaded: false,
@@ -2652,7 +2662,16 @@ S.dashTab='overview';
 function spDashTab(t){S.dashTab=t;go('dashboard');}
 
 function pgDashboard(){
-  if(!S.user){go('inscription');return '';}
+  if(!S.user){
+    // Auth pas encore vérifiée → afficher un loader (évite la redirection prématurée)
+    if(!S.authReady){
+      return '<div style="text-align:center;padding:6rem 2rem;font-family:Plus Jakarta Sans,sans-serif;color:#A2B0D9">'+
+        '<style>@keyframes sp-spin{to{transform:rotate(360deg)}}</style>'+
+        '<div style="width:36px;height:36px;border:3px solid #EAECEF;border-top-color:#687FD2;border-radius:50%;animation:sp-spin .8s linear infinite;margin:0 auto 1.25rem"></div>'+
+        'Chargement de votre espace…</div>';
+    }
+    go('inscription');return '';
+  }
   var isAsso=S.user.type==='asso';
   var tab=S.dashTab||'overview';
   var initials=S.user.name.split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase().substring(0,2)||'?';
