@@ -126,55 +126,8 @@ tailwind.config = {
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
-  body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--ink); overflow-x: hidden; cursor: none; }
-  a, button, [onclick], input, textarea, select, label { cursor: none; }
-
-  /* ── CURSEUR CUSTOM ── */
-  #sp-cursor-dot {
-    position: fixed; top: 0; left: 0; z-index: 99999; pointer-events: none;
-    width: 6px; height: 6px;
-    background: #151C33;
-    border-radius: 50%;
-    transform: translate(-50%,-50%);
-    will-change: transform;
-    mix-blend-mode: difference;
-  }
-  /* Croix (4 branches) autour du dot */
-  #sp-cursor-dot::before,
-  #sp-cursor-dot::after {
-    content: ''; position: absolute; background: #151C33;
-    border-radius: 2px;
-  }
-  #sp-cursor-dot::before { width: 1.5px; height: 10px; top: 50%; left: 50%; transform: translate(-50%,-50%) translateY(-50%) scaleY(0); transform-origin: center;
-    transition: transform .15s cubic-bezier(.34,1.56,.64,1); }
-  #sp-cursor-dot::after  { width: 10px; height: 1.5px; top: 50%; left: 50%; transform: translate(-50%,-50%) translateX(-50%) scaleX(0); transform-origin: center;
-    transition: transform .15s cubic-bezier(.34,1.56,.64,1); }
-
-  /* Losange suiveur */
-  #sp-cursor-ring {
-    position: fixed; top: 0; left: 0; z-index: 99998; pointer-events: none;
-    width: 24px; height: 24px;
-    border: 2px solid #151C33;
-    border-radius: 4px;
-    transform: translate(-50%,-50%) rotate(45deg);
-    will-change: transform;
-    transition: width .2s, height .2s, border-radius .2s, border-color .2s, opacity .2s;
-    mix-blend-mode: difference;
-  }
-
-  /* Hover : croix apparaît, losange se redresse + s'agrandit */
-  body.sp-cursor-hover #sp-cursor-dot::before { transform: translate(-50%,-50%) translateY(0) scaleY(1); }
-  body.sp-cursor-hover #sp-cursor-dot::after  { transform: translate(-50%,-50%) translateX(0) scaleX(1); }
-  body.sp-cursor-hover #sp-cursor-ring {
-    width: 36px; height: 36px; border-radius: 8px;
-    border-color: #3A4B82;
-  }
-
-  /* Click : flash scale */
-  body.sp-cursor-click #sp-cursor-ring {
-    width: 18px; height: 18px; border-radius: 3px;
-    border-color: #687FD2; opacity: .6;
-  }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--ink); overflow-x: hidden; }
+  a, button, [onclick] { cursor: pointer; }
 
   /* NAV */
   nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(255,255,255,0.97); backdrop-filter: blur(14px); border-bottom: 1px solid var(--spacio-border); padding: 0.875rem 0; transition: box-shadow 0.3s ease; }
@@ -530,7 +483,7 @@ tailwind.config = {
 <nav id="navbar">
   <div class="nav-inner">
     <a href="#" class="logo-wrap">
-      <img src="logo-spacio.png" style="height:34px;width:auto">
+      <img src="logo-spacio.png" style="height:46px;width:auto">
     </a>
     <div class="nav-links sp-nav-groups">
       <div class="sp-drop">
@@ -1299,7 +1252,7 @@ function spNav(){
   return '<nav style="position:sticky;top:0;z-index:1000;background:rgba(255,255,255,.97);backdrop-filter:blur(14px);border-bottom:1px solid #EAECEF;padding:.8rem 0">'+
     '<div style="max-width:1200px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem">'+
       '<a onclick="go(\'home\')" style="display:flex;align-items:center;gap:.55rem;cursor:pointer;text-decoration:none">'+
-        spLogoSVG(34)+
+        spLogoSVG(46)+
       '</a>'+
       '<div class="sp-nav-links-d sp-nav-groups">'+
         '<div class="sp-drop">'+
@@ -4269,59 +4222,6 @@ setTimeout(function(){
     wireHome();
   }
 },200);
-</script>
-<!-- ── CURSEUR CUSTOM ─────────────────────────────── -->
-<div id="sp-cursor-dot"></div>
-<div id="sp-cursor-ring"></div>
-<script>
-(function(){
-  var dot  = document.getElementById('sp-cursor-dot');
-  var ring = document.getElementById('sp-cursor-ring');
-  var mx=window.innerWidth/2, my=window.innerHeight/2;
-  var rx=mx, ry=my;
-  var raf;
-
-  document.addEventListener('mousemove', function(e){
-    mx = e.clientX; my = e.clientY;
-    dot.style.transform = 'translate(calc('+mx+'px - 50%), calc('+my+'px - 50%))';
-  });
-
-  // Ring suit avec un léger lag (lerp) — conserve rotate(45deg) via CSS, le JS gère translate uniquement
-  var ringRot = 45; // degrés, animé vers 0 en hover
-  function loop(){
-    rx += (mx - rx) * 0.11;
-    ry += (my - ry) * 0.11;
-    var isHover = document.body.classList.contains('sp-cursor-hover');
-    ringRot += (( isHover ? 0 : 45) - ringRot) * 0.12;
-    ring.style.transform = 'translate(calc('+rx.toFixed(2)+'px - 50%), calc('+ry.toFixed(2)+'px - 50%)) rotate('+ringRot.toFixed(1)+'deg)';
-    raf = requestAnimationFrame(loop);
-  }
-  loop();
-
-  // Hover sur éléments cliquables → état "hover"
-  document.addEventListener('mouseover', function(e){
-    var el = e.target;
-    var clickable = el.closest('a,button,[onclick],input,textarea,select,label');
-    if(clickable) document.body.classList.add('sp-cursor-hover');
-    else document.body.classList.remove('sp-cursor-hover');
-  });
-
-  // Click → flash
-  document.addEventListener('mousedown', function(){
-    document.body.classList.add('sp-cursor-click');
-  });
-  document.addEventListener('mouseup', function(){
-    document.body.classList.remove('sp-cursor-click');
-  });
-
-  // Masquer quand souris quitte la fenêtre
-  document.addEventListener('mouseleave', function(){
-    dot.style.opacity='0'; ring.style.opacity='0';
-  });
-  document.addEventListener('mouseenter', function(){
-    dot.style.opacity='1'; ring.style.opacity='1';
-  });
-})();
 </script>
 </body>
 </html>
