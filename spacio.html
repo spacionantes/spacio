@@ -1951,7 +1951,7 @@ function spForgotPassword(){
 }
 
 function pgInscription(type){
-  if(type&&!S.inscType)S.inscType=type;
+  if(type==='asso'||type==='hote') S.inscType=type;
   var step=S.inscStep||1;
 
   // ─ Indicateur d'étapes ─
@@ -4133,8 +4133,18 @@ function go(page,param){
       if(S.user){ go('dashboard'); return; }
       html=pgInscription(S.params);break;
     case 'confirm-email': html=pgConfirmEmail();break;
-    case 'poster-besoin': html=pgPosterBesoin();break;
-    case 'proposer-espace':html=pgProposerEspace();break;
+    case 'poster-besoin':
+      if(!S.user){
+        if(!S.authReady){ html='<div style="text-align:center;padding:6rem 2rem;font-family:Plus Jakarta Sans,sans-serif;color:#A2B0D9">Chargement…</div>'; break; }
+        go('login'); return;
+      }
+      html=pgPosterBesoin();break;
+    case 'proposer-espace':
+      if(!S.user){
+        if(!S.authReady){ html='<div style="text-align:center;padding:6rem 2rem;font-family:Plus Jakarta Sans,sans-serif;color:#A2B0D9">Chargement…</div>'; break; }
+        go('login'); return;
+      }
+      html=pgProposerEspace();break;
     case 'dashboard':
       if(!S.user){
         if(!S.authReady){
