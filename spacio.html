@@ -44,6 +44,11 @@ function spAfterAuth(event){
   // INITIAL_SESSION sans session = page déjà rendue correctement (non connecté)
   // Pas besoin de re-rendre → évite le double rendu et le double appel API
   if(event === 'INITIAL_SESSION' && !S.user) return;
+  // Home : re-fixer les boutons maintenant que l'état auth est connu
+  if(S.page === 'home'){
+    wireHome();
+    return;
+  }
   // Re-render la page courante si ses boutons dépendent de l'état user
   if(SP_AUTH_PAGES.indexOf(S.page) > -1){
     go(S.page, S.params);
@@ -923,8 +928,10 @@ const S={
   filters:{types:[],freqs:[],villes:[],search:''},
   _dbNeeds: [],
   _needsLoaded: false,
+  _needsLoading: false,
   _dbSpaces: [],
   _spacesLoaded: false,
+  _spacesLoading: false,
   _curSpace: null, _curSpaceId: null,
   _statsLoaded: false,
   spaceFilters: {types:[], villes:[], search:''},
@@ -961,6 +968,9 @@ const S={
 
 // ── LOADER SUPABASE BESOINS ───────────────────────
 function spLoadNeeds(callback){
+  if(S._needsLoaded){ if(callback) callback(); return; }
+  if(S._needsLoading) return; // déjà en cours — le callback existant re-rendra
+  S._needsLoading=true;
   db.from('needs')
     .select('*, profiles(name)')
     .eq('statut','en_recherche')
@@ -991,24 +1001,27 @@ function spLoadNeeds(callback){
           };
         });
       }
-      S._needsLoaded = true;
+      S._needsLoaded = true; S._needsLoading = false;
       if(callback) callback();
     }).catch(function(){
-      S._needsLoaded = true;
+      S._needsLoaded = true; S._needsLoading = false;
       if(callback) callback();
     });
 }
 
 // ── LOADER SUPABASE ESPACES ───────────────────────
 function spLoadSpaces(callback){
+  if(S._spacesLoaded){ if(callback) callback(); return; }
+  if(S._spacesLoading) return; // déjà en cours
+  S._spacesLoading=true;
   db.from('spaces').select('*, profiles!user_id(name,ville)')
     .eq('statut','disponible')
     .order('created_at',{ascending:false}).limit(60)
     .then(function(r){
       if(r.data&&r.data.length) S._dbSpaces=r.data;
-      S._spacesLoaded=true;
+      S._spacesLoaded=true; S._spacesLoading=false;
       if(callback) callback();
-    }).catch(function(){ S._spacesLoaded=true; if(callback) callback(); });
+    }).catch(function(){ S._spacesLoaded=true; S._spacesLoading=false; if(callback) callback(); });
 }
 
 function spLoadSpace(id, callback){
@@ -1431,11 +1444,15 @@ function spFooter(){
 // ── NEED CARD ─────────────────────────────────────
 function needCard(n){
   var c=TYPE_COLORS[n.type]||TYPE_COLORS.reunion,bg=c[0],col=c[1];
+  // CTA contextuel selon état auth
+  var ctaBtn=S.user
+    ? '<button onclick="event.stopPropagation();go(\'besoin\','+n.id+')" class="need-card-cta">Voir le détail →</button>'
+    : '<button onclick="event.stopPropagation();go(\'inscription\',\'hote\')" class="need-card-cta">Proposer mon espace</button>';
   return '<div onclick="go(\'besoin\','+n.id+')" class="need-card" style="cursor:pointer">'+
     '<span class="badge" style="background:'+bg+';color:'+col+'">'+n.typeLabel+'</span>'+
     '<div><div class="need-card-title">'+n.org+'</div><div class="need-card-org">'+n.city+(n.district?' · '+n.district:'')+'</div></div>'+
     '<div class="need-tags"><span class="tag">📅 '+n.schedule+'</span><span class="tag">📐 '+n.areaMin+'–'+n.areaMax+' m²</span><span class="tag">🔄 '+n.freq+'</span></div>'+
-    '<button onclick="event.stopPropagation();go(\'inscription\',\'hote\')" class="need-card-cta">Proposer mon espace</button>'+
+    ctaBtn+
   '</div>';
 }
 
@@ -1485,7 +1502,8 @@ function spRerenderSpaceGrid(){
 // ── PAGE : BESOINS ────────────────────────────────
 function pgBesoins(){
   var ns=S.filteredNeeds;
-  var villes=[...new Set(NEEDS.map(function(n){return n.city;}))];
+  var allNForVilles=S._needsLoaded&&S._dbNeeds.length?S._dbNeeds:NEEDS;
+  var villes=[...new Set(allNForVilles.map(function(n){return n.city||n.ville||'';}))].filter(Boolean);
   var typesF=[['reunion','Salle de réunion'],['atelier','Atelier'],['bureau','Bureau'],['polyvalente','Salle polyvalente'],['studio','Studio'],['exterieur','Extérieur'],['cuisine','Cuisine']];
   var freqsF=['Hebdomadaire','Mensuelle','Ponctuelle'];
 
@@ -1830,9 +1848,10 @@ function spSubmitInscription(){
     // Confirmation email envoyé (session null = confirmation email requise)
     if(!r.data.session){
       S.pendingEmail=email;
+      var savedType=S.inscType; // sauvegarder AVANT reset
       S.inscStep=1; S.inscType='';
       // Email de bienvenue transactionnel
-      spCallEmailFn({type:'welcome',to:email,name:name,user_type:S.inscType});
+      spCallEmailFn({type:'welcome',to:email,name:name,user_type:savedType});
       go('confirm-email');
       return;
     }
@@ -1874,7 +1893,7 @@ function spLogin(){
         spToast('Bon retour, '+p.data.name+' !');
       } else {
         // Profil introuvable (edge case) — connexion minimale
-        S.user={id:u.id, name:u.email.split('@')[0], type:'association', email:u.email, profile:null};
+        S.user={id:u.id, name:u.email.split('@')[0], type:'asso', email:u.email, profile:null};
         spToast('Connecté !');
       }
       spRefreshNav();
@@ -2866,7 +2885,7 @@ function pgDashboard(){
         '</div>'+
         '<div style="display:flex;gap:.75rem;flex-wrap:wrap">'+
           '<button onclick="spDashSaveProfile()" style="cursor:pointer;padding:.75rem 1.5rem;background:#3A4B82;color:white;border:none;border-radius:10px;font-family:Space Grotesk,sans-serif;font-size:.875rem;font-weight:700;transition:background .2s" onmouseover="this.style.background=\'#253060\'" onmouseout="this.style.background=\'#3A4B82\'">Enregistrer</button>'+
-          '<button onclick="db.auth.signOut().then(function(){S.user=null;spToast(\'Vous êtes déconnecté.\');go(\'home\');})" style="cursor:pointer;padding:.75rem 1.5rem;border:1.5px solid rgba(239,68,68,.3);background:white;color:#DC2626;border-radius:10px;font-family:Plus Jakarta Sans,sans-serif;font-size:.875rem;font-weight:500;transition:all .2s" onmouseover="this.style.background=\'rgba(239,68,68,.05)\'" onmouseout="this.style.background=\'white\'">Se déconnecter</button>'+
+          '<button onclick="db.auth.signOut().then(function(){S.user=null;S.dashData={needs:[],spaces:[],convs:[],stats:{needsCount:0,spacesCount:0,convCount:0,viewsCount:0,activeCount:0},loaded:false};S.notifs=[];S.notifsLoaded=false;spToast(\'Vous êtes déconnecté.\');go(\'home\');})" style="cursor:pointer;padding:.75rem 1.5rem;border:1.5px solid rgba(239,68,68,.3);background:white;color:#DC2626;border-radius:10px;font-family:Plus Jakarta Sans,sans-serif;font-size:.875rem;font-weight:500;transition:all .2s" onmouseover="this.style.background=\'rgba(239,68,68,.05)\'" onmouseout="this.style.background=\'white\'">Se déconnecter</button>'+
         '</div>'+
       '</div>';
   }
@@ -3135,7 +3154,7 @@ function pgEspace(id){
     (S.user&&S.user.type==='asso')?
       '<button onclick="spNewConversation(\''+sp.user_id+'\',null,\''+sp.id+'\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;background:#151C33;color:white;padding:.7rem 1.375rem;border-radius:10px;font-family:Space Grotesk,sans-serif;font-size:.875rem;font-weight:700;border:none;transition:background .2s" onmouseover="this.style.background=\'#253060\'" onmouseout="this.style.background=\'#151C33\'">'+
         '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Contacter le hôte</button>'+
-      '<a onclick="go(\'inscription\',\'asso\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;background:transparent;color:#687FD2;padding:.7rem 1.375rem;border-radius:10px;font-family:Space Grotesk,sans-serif;font-size:.875rem;font-weight:700;border:1.5px solid #3A4B82;transition:all .2s;text-decoration:none" onmouseover="this.style.background=\'rgba(58,75,130,.07)\'" onmouseout="this.style.background=\'transparent\'">Poster mon besoin</a>'
+      '<a onclick="go(\'poster-besoin\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;background:transparent;color:#687FD2;padding:.7rem 1.375rem;border-radius:10px;font-family:Space Grotesk,sans-serif;font-size:.875rem;font-weight:700;border:1.5px solid #3A4B82;transition:all .2s;text-decoration:none" onmouseover="this.style.background=\'rgba(58,75,130,.07)\'" onmouseout="this.style.background=\'transparent\'">Poster mon besoin</a>'
     :(S.user&&S.user.type==='hote')?
       '<span style="font-size:.875rem;color:#6B7280;padding:.7rem 1rem;background:rgba(58,75,130,.05);border-radius:10px;font-family:Plus Jakarta Sans,sans-serif">Vous êtes hôte — utilisez votre espace</span>'
     :
@@ -4240,11 +4259,11 @@ function wireHome(){
   // Charger les stats live
   spLoadStats();
   // Boutons nav
-  document.querySelectorAll('.btn-outline').forEach(function(b){if(b.textContent.trim().includes('asso'))b.onclick=function(){go('inscription','asso');};});
-  document.querySelectorAll('.btn-filled').forEach(function(b){if(b.textContent.trim().includes('espace'))b.onclick=function(){go('inscription','hote');};});
+  document.querySelectorAll('.btn-outline').forEach(function(b){if(b.textContent.trim().includes('asso'))b.onclick=function(){S.user?go('poster-besoin'):go('inscription','asso');};});
+  document.querySelectorAll('.btn-filled').forEach(function(b){if(b.textContent.trim().includes('espace'))b.onclick=function(){S.user?go('proposer-espace'):go('inscription','hote');};});
   // CTA cards hero
-  var ca=document.querySelector('.cta-card.asso');if(ca)ca.onclick=function(){go('inscription','asso');};
-  var ch=document.querySelector('.cta-card.hote');if(ch)ch.onclick=function(){go('inscription','hote');};
+  var ca=document.querySelector('.cta-card.asso');if(ca)ca.onclick=function(){S.user?(S.user.type==='asso'?go('poster-besoin'):go('besoins')):go('inscription','asso');};
+  var ch=document.querySelector('.cta-card.hote');if(ch)ch.onclick=function(){S.user?(S.user.type==='hote'?go('proposer-espace'):go('espaces')):go('inscription','hote');};
   // "Voir tous les besoins"
   document.querySelectorAll('.link-arrow').forEach(function(a){if(a.textContent.includes('besoins'))a.onclick=function(e){e.preventDefault();go('besoins');};});
   // Need cards
@@ -4252,7 +4271,7 @@ function wireHome(){
     c.style.cursor='pointer';
     c.onclick=function(){go('besoin',NEEDS[i]?NEEDS[i].id:i+1);};
     var btn=c.querySelector('.need-card-cta');
-    if(btn)btn.onclick=function(e){e.stopPropagation();go('inscription','hote');};
+    if(btn)btn.onclick=function(e){e.stopPropagation();S.user?go('besoin',NEEDS[i]?NEEDS[i].id:i+1):go('inscription','hote');};
   });
   // Guide cards
   document.querySelectorAll('.guide-card').forEach(function(c){c.onclick=function(){go('ressources');};});
@@ -4265,8 +4284,8 @@ function wireHome(){
   // CTA banner (section with gradient bg)
   document.querySelectorAll('section a').forEach(function(a){
     var t=a.textContent.trim();
-    if(t.includes('Je suis une association'))a.onclick=function(e){e.preventDefault();go('inscription','asso');};
-    if(t.includes('espace à proposer'))a.onclick=function(e){e.preventDefault();go('inscription','hote');};
+    if(t.includes('Je suis une association'))a.onclick=function(e){e.preventDefault();S.user?go('poster-besoin'):go('inscription','asso');};
+    if(t.includes('espace à proposer'))a.onclick=function(e){e.preventDefault();S.user?go('proposer-espace'):go('inscription','hote');};
   });
 }
 
