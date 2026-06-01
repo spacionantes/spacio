@@ -1198,6 +1198,82 @@ function spStopConvPoll(){
   if(S.convPollId){clearInterval(S.convPollId);S.convPollId=null;}
 }
 
+// ── PARTAGE & CONVENTION ─────────────────────────
+function spCopyLink(){
+  var url=location.href;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(function(){spToast('🔗 Lien copié dans le presse-papiers !');}).catch(function(){spToast('Lien : '+url);});
+  } else {
+    try{var t=document.createElement('textarea');t.value=url;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);spToast('🔗 Lien copié !');}
+    catch(e){spToast('Lien : '+url);}
+  }
+}
+
+function spGenerateConvention(convId){
+  var conv=convId?(S.dashData.convs||[]).find(function(c){return c.id===convId;})||null:null;
+  var other=(conv&&conv._other)||{name:'—',type:''};
+  var myName=S.user?S.user.name:'[Votre nom]';
+  var isAsso=S.user&&S.user.type==='asso';
+  var assoName=convId?(isAsso?myName:other.name):'[Nom de l\'association]';
+  var hoteName=convId?(isAsso?other.name:myName):'[Nom du hôte]';
+  // Chercher espace lié dans le cache
+  var sp=null;
+  if(conv&&conv.space_id){sp=(S._dbSpaces||[]).find(function(s){return s.id===conv.space_id;})||null;}
+  var spaceName=sp?sp.title||sp.space_type:'—';
+  var spaceAddr=sp?((sp.adresse||'')+(sp.ville?', '+sp.ville:'')):'—';
+  var today=new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+  var html='<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Convention de mise à disposition</title>'+
+    '<style>body{font-family:Georgia,serif;max-width:700px;margin:40px auto;color:#222;line-height:1.7;padding:0 24px}'+
+    'h1{font-size:1.5rem;text-align:center;border-bottom:2px solid #222;padding-bottom:16px;margin-bottom:2rem}'+
+    'h2{font-size:1rem;text-transform:uppercase;letter-spacing:.06em;margin-top:2rem;color:#3A4B82}'+
+    '.parties{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin:1.5rem 0}'+
+    '.partie{border:1px solid #ccc;border-radius:8px;padding:1rem}'+
+    '.partie h3{margin:0 0 .5rem;font-size:.9rem;text-transform:uppercase;color:#888}'+
+    'table{width:100%;border-collapse:collapse;margin:1rem 0}td{padding:.5rem;border:1px solid #ddd;font-size:.9rem}td:first-child{font-weight:700;width:35%;color:#555}'+
+    '.sigs{display:grid;grid-template-columns:1fr 1fr;gap:3rem;margin-top:3rem}'+
+    '.sig{border-top:1px solid #222;padding-top:1rem}'+
+    '.sig p{margin:0;font-size:.85rem;color:#666}'+
+    '@media print{.no-print{display:none}body{margin:20px}}</style>'+
+    '</head><body>'+
+    '<div class="no-print" style="text-align:right;margin-bottom:1.5rem">'+
+      '<button onclick="window.print()" style="padding:.5rem 1.25rem;background:#3A4B82;color:white;border:none;border-radius:8px;cursor:pointer;font-size:.9rem">🖨️ Imprimer / PDF</button>'+
+    '</div>'+
+    '<h1>Convention de mise à disposition d\'espace</h1>'+
+    '<p style="text-align:center;color:#666;font-size:.9rem">Établie le '+today+'</p>'+
+    '<h2>Parties</h2>'+
+    '<div class="parties">'+
+      '<div class="partie"><h3>Le Prêteur (Hôte)</h3><strong>'+hoteName+'</strong></div>'+
+      '<div class="partie"><h3>L\'Emprunteur (Association)</h3><strong>'+assoName+'</strong></div>'+
+    '</div>'+
+    '<h2>Espace mis à disposition</h2>'+
+    '<table>'+
+      '<tr><td>Désignation</td><td>'+spaceName+'</td></tr>'+
+      '<tr><td>Adresse</td><td>'+spaceAddr+'</td></tr>'+
+      '<tr><td>Superficie</td><td>'+(sp&&sp.superficie?sp.superficie+' m²':'À préciser')+'</td></tr>'+
+      '<tr><td>Équipements inclus</td><td>'+(sp&&sp.equipements&&sp.equipements.length?sp.equipements.join(', '):'À préciser')+'</td></tr>'+
+    '</table>'+
+    '<h2>Conditions d\'utilisation</h2>'+
+    '<table>'+
+      '<tr><td>Durée / Créneaux</td><td>'+(sp&&sp.disponibilites&&sp.disponibilites.heures?sp.disponibilites.heures:'À compléter')+'</td></tr>'+
+      '<tr><td>Tarif</td><td>'+(sp&&sp.tarif?sp.tarif:'Gratuit / À préciser')+'</td></tr>'+
+      '<tr><td>Conditions particulières</td><td>'+(sp&&sp.conditions?sp.conditions:'Néant')+'</td></tr>'+
+    '</table>'+
+    '<h2>Engagements des parties</h2>'+
+    '<p>Le Prêteur s\'engage à mettre l\'espace à disposition aux conditions convenues et à informer l\'Emprunteur de tout changement.</p>'+
+    '<p>L\'Emprunteur s\'engage à utiliser l\'espace conformément à sa destination, à le restituer dans l\'état initial et à signaler tout incident.</p>'+
+    '<h2>Résiliation</h2>'+
+    '<p>La présente convention peut être résiliée par chacune des parties avec un préavis de 15 jours par écrit.</p>'+
+    '<div class="sigs">'+
+      '<div class="sig"><p>Le Prêteur (Hôte)</p><br><br><br><p>Signature :</p><p style="margin-top:.5rem">'+hoteName+'</p></div>'+
+      '<div class="sig"><p>L\'Emprunteur (Association)</p><br><br><br><p>Signature :</p><p style="margin-top:.5rem">'+assoName+'</p></div>'+
+    '</div>'+
+    '<p style="margin-top:2rem;font-size:.78rem;color:#999;text-align:center">Document généré via Spacio — spacio.fr · Ce modèle est fourni à titre indicatif.</p>'+
+    '</body></html>';
+  var w=window.open('','_blank','width=800,height=900');
+  if(w){w.document.write(html);w.document.close();}
+  else{spToast('Autorisez les pop-ups pour générer la convention.');}
+}
+
 function spNewConversation(otherUserId, needId, spaceId){
   if(!S.user){go('login');return;}
   if(!otherUserId||otherUserId===S.user.id){spToast('Impossible d\'ouvrir cette conversation.');return;}
@@ -1451,7 +1527,7 @@ function needCard(n){
   return '<div onclick="go(\'besoin\','+n.id+')" class="need-card" style="cursor:pointer">'+
     '<span class="badge" style="background:'+bg+';color:'+col+'">'+n.typeLabel+'</span>'+
     '<div><div class="need-card-title">'+n.org+'</div><div class="need-card-org">'+n.city+(n.district?' · '+n.district:'')+'</div></div>'+
-    '<div class="need-tags"><span class="tag">📅 '+n.schedule+'</span><span class="tag">📐 '+n.areaMin+'–'+n.areaMax+' m²</span><span class="tag">🔄 '+n.freq+'</span></div>'+
+    '<div class="need-tags"><span class="tag">📅 '+n.schedule+'</span><span class="tag">📐 '+n.areaMin+'–'+n.areaMax+' m²</span><span class="tag">🔄 '+n.freq+'</span>'+(n.created||n.created_at?'<span class="tag" style="color:#9CA3AF">'+spRelTime(n.created||n.created_at)+'</span>':'')+'</div>'+
     ctaBtn+
   '</div>';
 }
@@ -1478,6 +1554,7 @@ function spaceCard(sp){
     '<div class="need-tags">'+
       (sp.superficie?'<span class="tag">📐 '+sp.superficie+' m²</span>':'')+
       '<span class="tag">💶 '+(sp.tarif||'À discuter')+'</span>'+
+      (sp.created_at?'<span class="tag" style="color:#9CA3AF">'+spRelTime(sp.created_at)+'</span>':'')+
     '</div>'+
     '<button onclick="event.stopPropagation();go(\'espace\',\''+sp.id+'\')" class="need-card-cta" style="background:#151C33">Voir l\'espace →</button>'+
     '</div>'+
@@ -1667,6 +1744,9 @@ function pgBesoin(id){
               '<button onclick="go(\'inscription\',\'asso\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;background:transparent;color:#687FD2;padding:.7rem 1.375rem;border-radius:10px;font-family:Space Grotesk,sans-serif;font-size:.875rem;font-weight:700;border:1.5px solid #3A4B82;transition:all .2s" onmouseover="this.style.background=\'rgba(58,75,130,.07)\'" onmouseout="this.style.background=\'transparent\'">'+
                 '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Je suis une asso</button>'
             :'')+
+            '<button onclick="spCopyLink()" title="Copier le lien" style="cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;background:white;color:#6B7280;padding:.7rem 1rem;border-radius:10px;font-family:Space Grotesk,sans-serif;font-size:.875rem;font-weight:600;border:1.5px solid rgba(58,75,130,.18);transition:all .2s" onmouseover="this.style.borderColor=\'#3A4B82\';this.style.color=\'#3A4B82\'" onmouseout="this.style.borderColor=\'rgba(58,75,130,.18)\';this.style.color=\'#6B7280\'">'+
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Partager'+
+            '</button>'+
           '</div>'+
         '</div>'+
       '</div>'+
@@ -2789,6 +2869,28 @@ function pgDashboard(){
           '</div>';
         }).join('')+
       '</div>'+
+      // ── ONBOARDING (nouveau compte) ──
+      (S.dashData.loaded&&((isAsso&&!st.needsCount)||(!isAsso&&!st.spacesCount))?
+        '<div style="background:linear-gradient(135deg,#EEF2FF,#F5F3FF);border-radius:14px;padding:1.375rem 1.5rem;border:1.5px dashed rgba(58,75,130,.25);margin-bottom:1.25rem;display:flex;align-items:flex-start;gap:1.125rem">'+
+          '<div style="width:44px;height:44px;border-radius:12px;background:white;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(58,75,130,.12)">'+
+            (isAsso?
+              '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3A4B82" stroke-width="1.75"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>':
+              '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3A4B82" stroke-width="1.75"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>')+
+          '</div>'+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-family:Space Grotesk,sans-serif;font-size:.92rem;font-weight:700;color:#151C33;margin-bottom:.3rem">'+
+              (isAsso?'Publiez votre premier besoin ! 🚀':'Proposez votre premier espace ! 🏠')+
+            '</div>'+
+            '<div style="font-size:.8rem;color:#6B7280;line-height:1.55;margin-bottom:.875rem">'+
+              (isAsso?'Décrivez vos besoins d\'espace pour que les hôtes puissent vous contacter. C\'est gratuit et prend 2 minutes.':
+                'Renseignez les caractéristiques de votre espace pour le rendre visible aux associations qui en ont besoin.')+
+            '</div>'+
+            '<button onclick="go(\''+(isAsso?'poster-besoin':'proposer-espace')+'\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.125rem;background:#3A4B82;color:white;border:none;border-radius:9px;font-family:Space Grotesk,sans-serif;font-size:.79rem;font-weight:700;transition:background .2s" onmouseover="this.style.background=\'#253060\'" onmouseout="this.style.background=\'#3A4B82\'">'+
+              '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>'+(isAsso?'Publier un besoin':'Proposer un espace')+
+            '</button>'+
+          '</div>'+
+        '</div>'
+      :'')+
       '<div style="background:white;border-radius:14px;padding:1.375rem;border:1px solid rgba(58,75,130,.1);margin-bottom:1.25rem">'+
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">'+
           '<h3 style="font-family:Space Grotesk,sans-serif;font-size:.95rem;font-weight:700;color:#151C33">Messages récents</h3>'+
@@ -2930,14 +3032,18 @@ function pgDashboard(){
         var av=(other.name||'?').split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().substring(0,2)||'?';
         var preview=c.last_message_preview||'Démarrez la conversation…';
         var when=c.last_message_at?spRelTime(c.last_message_at):(c.created_at?spRelTime(c.created_at):'');
-        return '<div onclick="go(\'conversation\',\''+c.id+'\')" style="cursor:pointer;display:flex;align-items:center;gap:.875rem;padding:1.125rem 1.375rem;border-bottom:'+(i<convs.length-1?'1px solid rgba(58,75,130,.07)':'none')+';transition:background .15s" onmouseover="this.style.background=\'rgba(58,75,130,.03)\'" onmouseout="this.style.background=\'transparent\'">'+
-          '<div style="width:44px;height:44px;border-radius:12px;background:#3A4B82;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:Space Grotesk,sans-serif;font-size:.72rem;font-weight:700;color:white">'+av+'</div>'+
+        var unread=c.unread_count&&c.unread_count>0;
+        return '<div onclick="go(\'conversation\',\''+c.id+'\')" style="cursor:pointer;display:flex;align-items:center;gap:.875rem;padding:1.125rem 1.375rem;border-bottom:'+(i<convs.length-1?'1px solid rgba(58,75,130,.07)':'none')+';background:'+(unread?'rgba(58,75,130,.03)':'transparent')+';transition:background .15s" onmouseover="this.style.background=\'rgba(58,75,130,.05)\'" onmouseout="this.style.background=\''+(unread?'rgba(58,75,130,.03)':'transparent')+'\'">'+
+          '<div style="position:relative;flex-shrink:0">'+
+            '<div style="width:44px;height:44px;border-radius:12px;background:'+(unread?'#151C33':'#3A4B82')+';display:flex;align-items:center;justify-content:center;font-family:Space Grotesk,sans-serif;font-size:.72rem;font-weight:700;color:white">'+av+'</div>'+
+            (unread?'<div style="position:absolute;top:-3px;right:-3px;width:16px;height:16px;border-radius:50%;background:#EF4444;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:.58rem;font-weight:700;color:white;font-family:Space Grotesk,sans-serif">'+Math.min(c.unread_count,9)+'</div>':'')+
+          '</div>'+
           '<div style="flex:1;min-width:0">'+
             '<div style="display:flex;justify-content:space-between;margin-bottom:.2rem">'+
-              '<span style="font-size:.875rem;font-weight:600;color:#151C33">'+other.name+'</span>'+
+              '<span style="font-size:.875rem;font-weight:'+(unread?'700':'600')+';color:#151C33">'+other.name+'</span>'+
               '<span style="font-size:.72rem;color:#9CA3AF">'+when+'</span>'+
             '</div>'+
-            '<div style="font-size:.81rem;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+preview+'</div>'+
+            '<div style="font-size:.81rem;color:'+(unread?'#4A5060':'#6B7280')+';font-weight:'+(unread?'500':'400')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+preview+'</div>'+
           '</div>'+
           '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="2" style="flex-shrink:0"><path d="M9 18l6-6-6-6"/></svg>'+
         '</div>';
@@ -2979,6 +3085,9 @@ function pgDashboard(){
       '</div>';
   }
 
+  // Calcul des non-lus pour badge sidebar
+  var unreadConvCount=(S.dashData.convs||[]).filter(function(c){return c.unread_count&&c.unread_count>0;}).length;
+
   var sideItems=[
     ['overview','Vue d\'ensemble','<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>'],
     ['liste',isAsso?'Mes besoins':'Mes espaces','<path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2"/>'],
@@ -3005,7 +3114,7 @@ function pgDashboard(){
               return '<button onclick="spDashTab(\''+it[0]+'\')" style="cursor:pointer;width:100%;display:flex;align-items:center;gap:.75rem;padding:.65rem .875rem;border-radius:10px;border:none;background:'+(active?'rgba(58,75,130,.4)':'transparent')+';margin-bottom:.25rem;transition:background .15s" onmouseover="if(\''+it[0]+'\' !==\''+tab+'\')this.style.background=\'rgba(255,255,255,.05)\'" onmouseout="if(\''+it[0]+'\' !==\''+tab+'\')this.style.background=\'transparent\'">'+
                 '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="'+(active?'white':'rgba(255,255,255,.4)')+'" stroke-width="2" style="flex-shrink:0">'+it[2]+'</svg>'+
                 '<span style="font-size:.83rem;font-weight:'+(active?'600':'400')+';color:'+(active?'white':'rgba(255,255,255,.4)')+'">'+it[1]+'</span>'+
-                (it[0]==='messagerie'&&S.dashData.stats.convCount>0?'<div style="margin-left:auto;width:18px;height:18px;border-radius:50%;background:#3A4B82;display:flex;align-items:center;justify-content:center;font-size:.64rem;font-weight:700;color:white">'+S.dashData.stats.convCount+'</div>':'')+
+                (it[0]==='messagerie'&&unreadConvCount>0?'<div style="margin-left:auto;min-width:18px;height:18px;border-radius:9px;background:#EF4444;display:flex;align-items:center;justify-content:center;padding:0 4px;font-size:.62rem;font-weight:700;color:white">'+unreadConvCount+'</div>':'')+
               '</button>';
             }).join('')+
           '</div>'+
@@ -3271,7 +3380,11 @@ function pgEspace(id){
               '<span style="display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .65rem;border-radius:100px;font-size:.72rem;font-weight:600;background:#DCFCE7;color:#166534"><span style="width:6px;height:6px;background:#22c55e;border-radius:50%;display:inline-block"></span>Disponible</span>'+
             '</div>'+
           '</div>'+
-          '<div style="display:flex;gap:.625rem;flex-wrap:wrap">'+ctaBlock+'</div>'+
+          '<div style="display:flex;gap:.625rem;flex-wrap:wrap">'+ctaBlock+
+            '<button onclick="spCopyLink()" title="Copier le lien" style="cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;background:white;color:#6B7280;padding:.7rem 1rem;border-radius:10px;font-family:Space Grotesk,sans-serif;font-size:.875rem;font-weight:600;border:1.5px solid rgba(58,75,130,.18);transition:all .2s" onmouseover="this.style.borderColor=\'#3A4B82\';this.style.color=\'#3A4B82\'" onmouseout="this.style.borderColor=\'rgba(58,75,130,.18)\';this.style.color=\'#6B7280\'">'+
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Partager'+
+            '</button>'+
+          '</div>'+
         '</div>'+
       '</div>'+
     '</div>'+
@@ -4024,10 +4137,13 @@ function pgConversation(convId){
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#687FD2" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>'+
           '</button>'+
           '<div style="width:40px;height:40px;border-radius:11px;background:#3A4B82;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:Space Grotesk,sans-serif;font-size:.75rem;font-weight:700;color:white">'+av+'</div>'+
-          '<div>'+
+          '<div style="flex:1;min-width:0">'+
             '<div style="font-family:Space Grotesk,sans-serif;font-size:.95rem;font-weight:700;color:#151C33">'+other.name+'</div>'+
             '<div style="font-size:.75rem;color:#9CA3AF">'+((other.type==='asso')?'Association':'Hôte')+'</div>'+
           '</div>'+
+          '<button onclick="spGenerateConvention(\''+convId+'\')" title="Générer la convention" style="cursor:pointer;display:inline-flex;align-items:center;gap:.35rem;padding:.45rem .875rem;background:rgba(58,75,130,.07);color:#3A4B82;border:1px solid rgba(58,75,130,.2);border-radius:9px;font-family:Space Grotesk,sans-serif;font-size:.76rem;font-weight:600;transition:all .2s;flex-shrink:0" onmouseover="this.style.background=\'rgba(58,75,130,.14)\'" onmouseout="this.style.background=\'rgba(58,75,130,.07)\'">'+
+            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Convention'+
+          '</button>'+
         '</div>'+
 
         // Feed messages
@@ -4054,8 +4170,8 @@ function pgRessources(){
     {cat:'Juridique',cc:'#DC2626',cb:'#FEF2F2',ic:'#3A4B82',
      svg:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
      title:'Convention de mise à disposition',
-     desc:'Modèle gratuit et personnalisable, validé juridiquement pour encadrer le prêt de votre espace.',
-     cta:'Télécharger le PDF',ico:dlIco},
+     desc:'Modèle gratuit et personnalisable, pré-rempli avec vos informations pour encadrer le prêt de votre espace.',
+     cta:'Générer la convention',ico:dlIco,fn:'spGenerateConvention(null)'},
     {cat:'Tutoriel',cc:'#059669',cb:'#ECFDF5',ic:'#059669',
      svg:'<circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>',
      title:'Comment poster un besoin efficace',
