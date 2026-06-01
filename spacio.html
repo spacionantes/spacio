@@ -596,72 +596,7 @@ tailwind.config = {
       <h2>Ce que cherchent les <span>associations</span></h2>
       <p class="sub">Parcourez les besoins publiés et proposez votre espace à celles qui vous correspondent.</p>
     </div>
-    <div class="needs-grid">
-      <div class="need-card fade-up fade-up-d1">
-        <span class="need-badge badge-reunion">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 13h6"/></svg>
-          Salle de réunion
-        </span>
-        <div>
-          <div class="need-card-title">Association de parents d'élèves du 3e</div>
-          <div class="need-card-org">Lyon 3e arrondissement</div>
-        </div>
-        <div class="need-tags">
-          <span class="tag">📅 Mardis 18h–20h</span>
-          <span class="tag">📐 ~20 m²</span>
-          <span class="tag">🔄 Hebdomadaire</span>
-        </div>
-        <button class="need-card-cta">Proposer mon espace</button>
-      </div>
-      <div class="need-card fade-up fade-up-d2">
-        <span class="need-badge badge-atelier">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          Atelier artisanal
-        </span>
-        <div>
-          <div class="need-card-title">Les Mains Créatives</div>
-          <div class="need-card-org">Bordeaux (Chartrons)</div>
-        </div>
-        <div class="need-tags">
-          <span class="tag">📅 Samedis matin</span>
-          <span class="tag">📐 ~50 m²</span>
-          <span class="tag">🔄 Mensuelle</span>
-        </div>
-        <button class="need-card-cta">Proposer mon espace</button>
-      </div>
-      <div class="need-card fade-up fade-up-d3">
-        <span class="need-badge badge-polyvalente">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
-          Salle polyvalente
-        </span>
-        <div>
-          <div class="need-card-title">Football Club Solidaire</div>
-          <div class="need-card-org">Lille (Moulins)</div>
-        </div>
-        <div class="need-tags">
-          <span class="tag">📅 Mer. + Ven. soir</span>
-          <span class="tag">📐 200 m²</span>
-          <span class="tag">🔄 Hebdomadaire</span>
-        </div>
-        <button class="need-card-cta">Proposer mon espace</button>
-      </div>
-      <div class="need-card fade-up fade-up-d4">
-        <span class="need-badge badge-bureau">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-          Bureau partagé
-        </span>
-        <div>
-          <div class="need-card-title">Aide aux Réfugiés 75</div>
-          <div class="need-card-org">Paris 11e arrondissement</div>
-        </div>
-        <div class="need-tags">
-          <span class="tag">📅 Flex / semaine</span>
-          <span class="tag">📐 ~15 m²</span>
-          <span class="tag">🔄 Ponctuelle</span>
-        </div>
-        <button class="need-card-cta">Proposer mon espace</button>
-      </div>
-    </div>
+    <div id="sp-home-needs-grid" class="needs-grid fade-up"></div>
     <div class="needs-cta-row fade-up">
       <a href="#" onclick="go('besoins');return false;" class="link-arrow">
         Voir tous les besoins
@@ -4478,6 +4413,8 @@ function wireHome(){
   if(sf) sf.innerHTML=spFooter();
   // Charger les stats live
   spLoadStats();
+  // Remplir la grille des besoins avec les vraies données (ou état de chargement)
+  spWireHomeNeeds();
   // Boutons nav
   document.querySelectorAll('.btn-outline').forEach(function(b){if(b.textContent.trim().includes('asso'))b.onclick=function(){S.user?go('poster-besoin'):go('inscription','asso');};});
   document.querySelectorAll('.btn-filled').forEach(function(b){if(b.textContent.trim().includes('espace'))b.onclick=function(){S.user?go('proposer-espace'):go('inscription','hote');};});
@@ -4486,13 +4423,6 @@ function wireHome(){
   var ch=document.querySelector('.cta-card.hote');if(ch)ch.onclick=function(){S.user?(S.user.type==='hote'?go('proposer-espace'):go('espaces')):go('inscription','hote');};
   // "Voir tous les besoins"
   document.querySelectorAll('.link-arrow').forEach(function(a){if(a.textContent.includes('besoins'))a.onclick=function(e){e.preventDefault();go('besoins');};});
-  // Need cards
-  document.querySelectorAll('.need-card').forEach(function(c,i){
-    c.style.cursor='pointer';
-    c.onclick=function(){go('besoin',NEEDS[i]?NEEDS[i].id:i+1);};
-    var btn=c.querySelector('.need-card-cta');
-    if(btn)btn.onclick=function(e){e.stopPropagation();S.user?go('besoin',NEEDS[i]?NEEDS[i].id:i+1):go('inscription','hote');};
-  });
   // Guide cards
   document.querySelectorAll('.guide-card').forEach(function(c){c.onclick=function(){go('ressources');};});
   // Nav links
@@ -4507,6 +4437,36 @@ function wireHome(){
     if(t.includes('Je suis une association'))a.onclick=function(e){e.preventDefault();S.user?go('poster-besoin'):go('inscription','asso');};
     if(t.includes('espace à proposer'))a.onclick=function(e){e.preventDefault();S.user?go('proposer-espace'):go('inscription','hote');};
   });
+}
+
+function spWireHomeNeeds(){
+  var grid=document.getElementById('sp-home-needs-grid');
+  if(!grid) return;
+  if(S._needsLoaded && S._dbNeeds.length){
+    // Afficher les 4 premiers besoins réels
+    var slice=S._dbNeeds.slice(0,4);
+    grid.innerHTML=slice.map(needCard).join('');
+  } else if(S._needsLoaded && !S._dbNeeds.length){
+    // Aucun besoin en base : invitation à publier
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:3rem 1.5rem;background:white;border-radius:16px;border:1.5px dashed rgba(58,75,130,.2)">'+
+      '<div style="font-size:2.5rem;margin-bottom:.75rem">📋</div>'+
+      '<div style="font-family:Space Grotesk,sans-serif;font-size:1rem;font-weight:700;color:#151C33;margin-bottom:.4rem">Pas encore de besoins publiés</div>'+
+      '<div style="font-size:.875rem;color:#9CA3AF;margin-bottom:1.25rem">Soyez la première association à publier un besoin !</div>'+
+      '<button onclick="go(\'inscription\',\'asso\')" style="cursor:pointer;padding:.6rem 1.375rem;background:#3A4B82;color:white;border:none;border-radius:9px;font-family:Space Grotesk,sans-serif;font-size:.85rem;font-weight:700">Publier un besoin →</button>'+
+    '</div>';
+  } else {
+    // En cours de chargement : squelettes
+    grid.innerHTML=spSkeletonCards(4,true);
+    spLoadNeeds(function(){
+      if(S.page==='home') spWireHomeNeeds();
+    });
+    // Fallback : si le load est déjà en cours (callback ignoré), polling léger
+    if(S._needsLoading){
+      var _poll=setInterval(function(){
+        if(S._needsLoaded||S.page!=='home'){clearInterval(_poll);if(S.page==='home')spWireHomeNeeds();}
+      },150);
+    }
+  }
 }
 
 // ── BOOT ─────────────────────────────────────────
