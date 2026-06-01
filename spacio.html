@@ -1457,9 +1457,9 @@ function needCard(n){
   var c=TYPE_COLORS[n.type]||TYPE_COLORS.reunion,bg=c[0],col=c[1];
   // CTA contextuel selon état auth
   var ctaBtn=S.user
-    ? '<button onclick="event.stopPropagation();go(\'besoin\','+n.id+')" class="need-card-cta">Voir le détail →</button>'
+    ? '<button onclick="event.stopPropagation();go(\'besoin\',\''+n.id+'\')" class="need-card-cta">Voir le détail →</button>'
     : '<button onclick="event.stopPropagation();go(\'inscription\',\'hote\')" class="need-card-cta">Proposer mon espace</button>';
-  return '<div onclick="go(\'besoin\','+n.id+')" class="need-card" style="cursor:pointer">'+
+  return '<div onclick="go(\'besoin\',\''+n.id+'\')" class="need-card" style="cursor:pointer">'+
     '<span class="badge" style="background:'+bg+';color:'+col+'">'+n.typeLabel+'</span>'+
     '<div><div class="need-card-title">'+n.org+'</div><div class="need-card-org">'+n.city+(n.district?' · '+n.district:'')+'</div></div>'+
     '<div class="need-tags"><span class="tag">📅 '+n.schedule+'</span><span class="tag">📐 '+n.areaMin+'–'+n.areaMax+' m²</span><span class="tag">🔄 '+n.freq+'</span>'+(n.created||n.created_at?'<span class="tag" style="color:#9CA3AF">'+spRelTime(n.created||n.created_at)+'</span>':'')+'</div>'+
