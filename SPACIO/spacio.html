@@ -925,7 +925,7 @@ function spLoadNeeds(callback){
   if(S._needsLoading) return; // déjà en cours — le callback existant re-rendra
   S._needsLoading=true;
   db.from('needs')
-    .select('*, profiles(name)')
+    .select('*, profiles!user_id(name)')
     .eq('statut','en_recherche')
     .eq('visibility','public')
     .order('created_at',{ascending:false})
@@ -939,7 +939,7 @@ function spLoadNeeds(callback){
             user_id:  n.user_id,
             type:     n.space_type,
             typeLabel:TYPE_LABELS[n.space_type]||n.space_type,
-            org:      n.profiles ? n.profiles.name : 'Association',
+            org:      (n.profiles && n.profiles.name) ? n.profiles.name : 'Association',
             city:     n.ville||'',
             district: n.quartier||'',
             freq:     n.frequence||'ponctuelle',
