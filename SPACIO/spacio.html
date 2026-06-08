@@ -30,11 +30,24 @@
 const SUPA_URL  = 'https://mgsbcnhpvyjosqcjsyye.supabase.co';
 const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2Jjbmhwdnlqb3NxY2pzeXllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMjQzMTIsImV4cCI6MjA5NDkwMDMxMn0.xIlNgz5Iv2ROzHZRtsGIlOAITPa3Fw7MOiJTgZaDFYk';
 // ⚠️ Capturer search + hash AVANT createClient :
-// Supabase appelle history.replaceState dès l'init pour nettoyer ?code= de l'URL.
-// Notre boot (setTimeout 200ms) arrive trop tard → l'URL est déjà vide.
+// Supabase appelle history.replaceState dès l'init pour nettoyer l'URL.
 var _SP_INIT_SEARCH = window.location.search;
 var _SP_INIT_HASH   = window.location.hash;
-const db = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+// Détecter un retour depuis un lien Supabase (reset mdp, magic link…)
+// PKCE  → ?code= ou ?token_hash= dans search
+// Implicit → #access_token=...&type=recovery dans hash
+var _SP_IS_RECOVERY = /[?&](code|token_hash)=/.test(_SP_INIT_SEARCH)
+                   || /type=recovery/.test(_SP_INIT_HASH)
+                   || /type=recovery/.test(_SP_INIT_SEARCH);
+
+// flowType:'implicit' : tokens dans le hash (#access_token=…) au lieu du PKCE.
+// Raison : PKCE stocke le verifier en localStorage → si l'utilisateur ouvre
+// le lien email dans un autre navigateur/device que celui où il a demandé
+// le reset, le verifier est absent et l'échange échoue silencieusement.
+// Implicit fonctionne depuis n'importe quel device sans prérequis.
+const db = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+  auth: { flowType: 'implicit' }
+});
 
 // Pages dont les boutons dépendent de l'état auth → re-render après restore session
 var SP_AUTH_PAGES = ['besoin','espace','besoins','espaces','dashboard','proposer-espace','poster-besoin','conversation','reset-password'];
@@ -65,8 +78,9 @@ function spAfterAuth(event){
 db.auth.onAuthStateChange(function(event, session){
   // Ne pas re-rendre sur un simple refresh silencieux du token (évite le re-render toutes les heures)
   if(event === 'TOKEN_REFRESHED') return;
-  // Flux réinitialisation de mot de passe : on redirige vers la page de saisie du nouveau mdp
-  if(event === 'PASSWORD_RECOVERY'){
+  // Flux réinitialisation de mot de passe : PASSWORD_RECOVERY (nominal)
+  // ou SIGNED_IN quand Supabase implicit fire SIGNED_IN au lieu de PASSWORD_RECOVERY
+  if(event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && _SP_IS_RECOVERY && !S.passwordRecovery)){
     S.authReady = true;
     S.passwordRecovery = true;
     go('reset-password');
@@ -4563,15 +4577,15 @@ function spWireHomeNeeds(){
 setTimeout(function(){
   // Utiliser _SP_INIT_SEARCH/_SP_INIT_HASH capturés AVANT que createClient
   // nettoie l'URL via history.replaceState
-  if(/[?&](code|token_hash)=/.test(_SP_INIT_SEARCH)){
-    // Retour depuis lien Supabase (reset mdp, magic link…) → spinner pendant l'échange PKCE
+  if(_SP_IS_RECOVERY){
+    // Retour depuis lien reset mdp → spinner, PASSWORD_RECOVERY va fire et afficher le formulaire
     var _overlay=document.getElementById('sp-overlay');
     _overlay.innerHTML='<div style="text-align:center;padding:8rem 2rem;font-family:Plus Jakarta Sans,sans-serif;color:#A2B0D9">'+
       '<style>@keyframes sp-spin{to{transform:rotate(360deg)}}</style>'+
       '<div style="width:40px;height:40px;border:3px solid #EAECEF;border-top-color:#687FD2;border-radius:50%;animation:sp-spin .8s linear infinite;margin:0 auto 1.5rem"></div>'+
       'Vérification en cours…</div>';
     _overlay.style.display='block';
-    // Fallback 8s : si PASSWORD_RECOVERY ne fire jamais, aller au login
+    // Fallback 8s : si aucun event auth ne fire, aller au login
     setTimeout(function(){ if(!S.passwordRecovery && S.page!=='dashboard'){ go('login'); } },8000);
   } else if(_SP_INIT_HASH && _SP_INIT_HASH.length>1){
     // Deep-link : hash présent au chargement → naviguer vers la bonne page
