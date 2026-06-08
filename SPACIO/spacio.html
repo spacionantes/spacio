@@ -29,6 +29,11 @@
 // ── SUPABASE CLIENT ────────────────────────────────
 const SUPA_URL  = 'https://mgsbcnhpvyjosqcjsyye.supabase.co';
 const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc2Jjbmhwdnlqb3NxY2pzeXllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMjQzMTIsImV4cCI6MjA5NDkwMDMxMn0.xIlNgz5Iv2ROzHZRtsGIlOAITPa3Fw7MOiJTgZaDFYk';
+// ⚠️ Capturer search + hash AVANT createClient :
+// Supabase appelle history.replaceState dès l'init pour nettoyer ?code= de l'URL.
+// Notre boot (setTimeout 200ms) arrive trop tard → l'URL est déjà vide.
+var _SP_INIT_SEARCH = window.location.search;
+var _SP_INIT_HASH   = window.location.hash;
 const db = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 
 // Pages dont les boutons dépendent de l'état auth → re-render après restore session
@@ -4556,21 +4561,20 @@ function spWireHomeNeeds(){
 
 // ── BOOT ─────────────────────────────────────────
 setTimeout(function(){
-  var _qs = window.location.search;
-  // Retour depuis un lien Supabase (reset mdp, magic link…) : URL contient ?code= ou ?token_hash=
-  // → ne pas afficher la home, montrer un spinner pendant que Supabase échange le code
-  // → PASSWORD_RECOVERY (ou SIGNED_IN) fire ensuite et navigue vers la bonne page
-  if(/[?&](code|token_hash)=/.test(_qs)){
+  // Utiliser _SP_INIT_SEARCH/_SP_INIT_HASH capturés AVANT que createClient
+  // nettoie l'URL via history.replaceState
+  if(/[?&](code|token_hash)=/.test(_SP_INIT_SEARCH)){
+    // Retour depuis lien Supabase (reset mdp, magic link…) → spinner pendant l'échange PKCE
     var _overlay=document.getElementById('sp-overlay');
     _overlay.innerHTML='<div style="text-align:center;padding:8rem 2rem;font-family:Plus Jakarta Sans,sans-serif;color:#A2B0D9">'+
       '<style>@keyframes sp-spin{to{transform:rotate(360deg)}}</style>'+
       '<div style="width:40px;height:40px;border:3px solid #EAECEF;border-top-color:#687FD2;border-radius:50%;animation:sp-spin .8s linear infinite;margin:0 auto 1.5rem"></div>'+
       'Vérification en cours…</div>';
     _overlay.style.display='block';
-    // Fallback : si PASSWORD_RECOVERY ne fire pas après 8s, aller au login
+    // Fallback 8s : si PASSWORD_RECOVERY ne fire jamais, aller au login
     setTimeout(function(){ if(!S.passwordRecovery && S.page!=='dashboard'){ go('login'); } },8000);
-  } else if(window.location.hash && window.location.hash.length>1){
-    // Deep-link: si un hash est présent au chargement, naviguer vers cette page
+  } else if(_SP_INIT_HASH && _SP_INIT_HASH.length>1){
+    // Deep-link : hash présent au chargement → naviguer vers la bonne page
     _spNavLock=true;
     spRouteFromHash();
     setTimeout(function(){_spNavLock=false;},50);
