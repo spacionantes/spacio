@@ -32,7 +32,7 @@ const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIs
 const db = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 
 // Pages dont les boutons dépendent de l'état auth → re-render après restore session
-var SP_AUTH_PAGES = ['besoin','espace','besoins','espaces','dashboard','proposer-espace','poster-besoin','conversation'];
+var SP_AUTH_PAGES = ['besoin','espace','besoins','espaces','dashboard','proposer-espace','poster-besoin','conversation','reset-password'];
 
 function spAfterAuth(event){
   spRefreshNav();
@@ -69,15 +69,16 @@ db.auth.onAuthStateChange(function(event, session){
   }
   if(session && session.user){
     var u = session.user;
-    db.from('profiles').select('*').eq('id', u.id).single().then(function(p){
-      if(p.data){
-        S.user = { id: u.id, name: p.data.name, type: p.data.type, email: u.email, profile: p.data };
-      } else {
-        S.user = { id: u.id, name: u.email.split('@')[0], type: 'asso', email: u.email, profile: null };
-      }
+    function _setUser(profile){
+      S.user = profile
+        ? { id: u.id, name: profile.name, type: profile.type, email: u.email, profile: profile }
+        : { id: u.id, name: u.email.split('@')[0], type: 'asso', email: u.email, profile: null };
       S.authReady = true;
       spAfterAuth(event);
-    });
+    }
+    db.from('profiles').select('*').eq('id', u.id).single()
+      .then(function(p){ _setUser(p && p.data ? p.data : null); })
+      .catch(function(){ _setUser(null); }); // réseau/CORS → fallback sans profil
   } else {
     // SIGNED_OUT ou INITIAL_SESSION sans session (pas connecté)
     S.user = null;
@@ -85,6 +86,15 @@ db.auth.onAuthStateChange(function(event, session){
     spAfterAuth(event);
   }
 });
+// Safety timeout : si Supabase ne répond jamais (réseau coupé, projet pausé…)
+// on débloque l'UI après 6 secondes plutôt que de rester bloqué indéfiniment
+setTimeout(function(){
+  if(!S.authReady){
+    S.user = null;
+    S.authReady = true;
+    spAfterAuth('INITIAL_SESSION');
+  }
+}, 6000);
 </script>
 <script>
 tailwind.config = {
@@ -1966,8 +1976,8 @@ function spForgotPassword(){
   var addr = email ? email.value.trim() : '';
   if(!addr){ spToast('Entrez votre email d\'abord.'); return; }
   var resetUrl = window.location.hostname === 'localhost'
-    ? window.location.origin + '/?reset=1'
-    : 'https://spacionantes.fr/?reset=1';
+    ? window.location.origin + '/#reset-password'
+    : 'https://spacionantes.fr/#reset-password';
   db.auth.resetPasswordForEmail(addr,{
     redirectTo: resetUrl
   }).then(function(r){
@@ -4344,7 +4354,11 @@ function go(page,param){
       html=pgInscription(S.params);break;
     case 'confirm-email': html=pgConfirmEmail();break;
     case 'reset-password':
-      if(!S.passwordRecovery){ go('login'); return; }
+      if(!S.passwordRecovery){
+        // Attendre que PASSWORD_RECOVERY fire (lien email) avant de rediriger
+        if(!S.authReady){ html='<div style="text-align:center;padding:6rem 2rem;font-family:Plus Jakarta Sans,sans-serif;color:#A2B0D9">Chargement…</div>'; break; }
+        go('login'); return;
+      }
       html=pgResetPassword();break;
     case 'poster-besoin':
       if(!S.user){
