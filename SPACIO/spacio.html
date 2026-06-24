@@ -96,7 +96,16 @@ db.auth.onAuthStateChange(function(event, session){
       spAfterAuth(event);
     }
     db.from('profiles').select('*').eq('id', u.id).single()
-      .then(function(p){ _setUser(p && p.data ? p.data : null); })
+      .then(function(p){
+        if(p && p.data){ _setUser(p.data); return; }
+        // Profil manquant — le créer depuis les user_metadata de l'auth
+        var meta = u.user_metadata || {};
+        var name = meta.name || u.email.split('@')[0];
+        var type = (['asso','hote','admin'].indexOf(meta.type) > -1) ? meta.type : 'asso';
+        db.from('profiles').insert({ id: u.id, name: name, type: type, ville: meta.ville||null })
+          .then(function(){ _setUser({ id: u.id, name: name, type: type, ville: meta.ville||null }); })
+          .catch(function(){ _setUser(null); });
+      })
       .catch(function(){ _setUser(null); }); // réseau/CORS → fallback sans profil
   } else {
     // SIGNED_OUT ou INITIAL_SESSION sans session (pas connecté)
@@ -4139,12 +4148,27 @@ function pgConversation(convId){
   var other=conv._other||{name:'Correspondant'};
   var av=(other.name||'?').split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().substring(0,2)||'?';
 
-  // Charger les messages + démarrer le poll
+  // Charger les messages + démarrer le poll (après vérification que la conversation existe)
   setTimeout(function(){
-    spLoadMessages(convId,function(){
-      spRenderMessages(convId);
-      spStartConvPoll(convId);
-    });
+    db.from('conversations').select('id').eq('id',convId).limit(1)
+      .then(function(r){
+        if(!r.data||!r.data.length){
+          var feed=document.getElementById('sp-msg-feed');
+          if(feed)feed.innerHTML='<div style="text-align:center;padding:2rem;color:#EF4444;font-size:.875rem">Cette conversation n\'existe plus ou vous n\'en faites pas partie.<br><a onclick="go(\'dashboard\')" style="cursor:pointer;color:#687FD2;font-weight:600">Retour au tableau de bord</a></div>';
+          var inp=document.getElementById('sp-msg-input');
+          if(inp){inp.disabled=true;inp.placeholder='Conversation introuvable';}
+          var btn=inp&&inp.parentElement&&inp.parentElement.querySelector('button');
+          if(btn)btn.disabled=true;
+          return;
+        }
+        spLoadMessages(convId,function(){
+          spRenderMessages(convId);
+          spStartConvPoll(convId);
+        });
+      })
+      .catch(function(){
+        spLoadMessages(convId,function(){ spRenderMessages(convId); spStartConvPoll(convId); });
+      });
   },50);
 
   var bubbles=S.convMessages.length?
